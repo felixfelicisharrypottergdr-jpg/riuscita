@@ -692,12 +692,69 @@
     line-height:1.45;
   }
 
+
+  /* Conoscenza selezionata: riferimento compatto + famiglia cromatica. */
+  #schedaCard > .step-label{
+    margin-bottom:8px;
+    flex-wrap:wrap;
+  }
+  #schedaCard > .scheda-box{
+    margin-top:0;
+    padding:0;
+    max-height:none;
+    overflow:visible;
+    border:0;
+    background:transparent;
+  }
+  #schedaCard .knowledge-link-box{
+    min-height:0;
+    padding:9px 11px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    text-align:left;
+    background:#fffaf0;
+    border:1px solid var(--line);
+    border-radius:6px;
+  }
+  #schedaCard .knowledge-link-title{
+    flex:1 1 auto;
+    min-width:0;
+    margin:0;
+    font-size:21px;
+    line-height:1.1;
+  }
+  #schedaCard .knowledge-link-note{display:none;}
+  #schedaCard .knowledge-link-button{
+    flex:0 0 auto;
+    padding:7px 11px;
+    border-radius:6px;
+    font-size:13px;
+    white-space:nowrap;
+    box-shadow:none;
+  }
+
+  .scheda-tag.family-tag{border:1px solid rgba(44,28,16,.18);}
+  .scheda-tag.family-brownlight{background:#ad7958;color:#fff9ef;}
+  .scheda-tag.family-blue{background:#728fa4;color:#fff;}
+  .scheda-tag.family-green{background:#9bb276;color:#22331c;}
+  .scheda-tag.family-violet{background:#77547f;color:#fff7ff;}
+  .scheda-tag.family-orange{background:#c97932;color:#fff8ed;}
+  .scheda-tag.family-brown{background:#6f4c34;color:#fff7e9;}
+  .scheda-tag.family-bordeaux{background:#8b3548;color:#fff7f7;}
+  .scheda-tag.family-yellow{background:#d9bc64;color:#3e2a12;}
+  .scheda-tag.family-default{background:var(--maroon);color:var(--parchment);}
+  .scheda-tag.tipologia-tag{background:var(--maroon);color:var(--parchment);}
+
   @media(max-width:640px){
     body{padding:10px;}
     .wrap{padding:16px 12px 20px;}
     .card{padding:13px 12px;}
     .step-label{font-size:18px;}
     .sigillo-conoscenze{width:58px;height:58px;font-size:25px;}
+    #schedaCard .knowledge-link-box{align-items:stretch;flex-direction:column;}
+    #schedaCard .knowledge-link-button{width:100%;}
   }
 
 </style>
@@ -1099,6 +1156,48 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     autoconclusiva:'Autoconclusiva', scolastica:'Scolastica', extra:'Extra', avanzata:'Avanzata', special:'Formula speciale'
   };
 
+  function incantesimoTipo(entry){
+    var h = entry && entry.html ? String(entry.html) : '';
+    var m = h.match(/<tr[^>]*class=[\"']?valori[^>]*>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/i);
+    if (!m){ return ''; }
+    return m[1].replace(/<[^>]+>/g,'').replace(/&nbsp;/gi,' ').replace(/\s+/g,' ').trim();
+  }
+
+  function knowledgeFamily(entry){
+    if (!entry){ return {label:'Conoscenza', css:'family-default'}; }
+    var src = entry.source || '';
+    var raw = incantesimoTipo(entry).toLowerCase();
+    var html = String(entry.html || '').toLowerCase();
+
+    if (src === 'Incantesimo'){
+      if (entry.tipologia === 'autoconclusiva' || raw.indexOf('autoconclus') !== -1 || raw.indexOf('autotonclus') !== -1){
+        return {label:'Incantesimo Autoconclusivo', css:'family-orange'};
+      }
+      if (raw === 'arcaico') return {label:'Incantesimo Arcaico', css:'family-brownlight'};
+      if (raw === 'trasfigurativo') return {label:'Incantesimo Trasfigurativo', css:'family-brownlight'};
+      if (raw === 'elementale') return {label:'Incantesimo Elementale', css:'family-blue'};
+      if (raw === 'percezione') return {label:'Incantesimo di Percezione', css:'family-blue'};
+      if (raw === 'mentale' || raw === 'illusione') return {label:'Incantesimo Mentale', css:'family-violet'};
+      if (raw === 'fattura' || raw === 'maledizione' || html.indexOf('specchietto voluntas') !== -1){
+        return {label:'Incantesimo Oscuro', css:'family-violet'};
+      }
+      if (raw === 'offensivo') return {label:'Incantesimo Offensivo', css:'family-yellow'};
+      if (raw === 'difensivo') return {label:'Incantesimo Difensivo', css:'family-yellow'};
+      return {label:'Incantesimo', css:'family-default'};
+    }
+
+    if (src.indexOf('Divinazione') === 0) return {label:'Divinazione', css:'family-blue'};
+    if (src === 'Tecnica Magizoologica') return {label:'Magizoologia', css:'family-green'};
+    if (src === 'Tecnica Erbologica') return {label:'Erbologia', css:'family-green'};
+    if (src === 'Tecnica Medimagica') return {label:'Medimagia', css:'family-bordeaux'};
+    if (src === 'Tecnica Pozionistica') return {label:'Pozionistica', css:'family-bordeaux'};
+    if (src === 'Altre Conoscenze Scolastiche' || src === 'Conoscenza Scolastica' || src === 'Altra Conoscenza Scolastica'){
+      return {label:'Altre Conoscenze Scolastiche', css:'family-brown'};
+    }
+    if (src === 'Tecnica di Tracciatura') return {label:'Tracciatura', css:'family-default'};
+    return {label:src || 'Conoscenza', css:'family-default'};
+  }
+
 
   var SOURCE_RULE_LINKS = {"Incantesimo":"https://felixfelicisharrypottergdr.forumfree.it/?t=80407094#","Divinazione (Scolastica)":"https://felixfelicisharrypottergdr.forumfree.it/?t=80407720#","Divinazione (Extra)":"https://felixfelicisharrypottergdr.forumfree.it/?t=80407720#","Divinazione (Avanzata)":"https://felixfelicisharrypottergdr.forumfree.it/?t=80407720#","Tecnica di Tracciatura":"https://felixfelicisharrypottergdr.forumfree.it/?t=80504882#","Altre Conoscenze Scolastiche":"https://felixfelicisharrypottergdr.forumfree.it/?t=80421518#","Tecnica Medimagica":"https://felixfelicisharrypottergdr.forumfree.it/?t=80630315#","Tecnica Erbologica":"https://felixfelicisharrypottergdr.forumfree.it/?t=80407809#","Tecnica Magizoologica":"https://felixfelicisharrypottergdr.forumfree.it/?t=80408054#","Tecnica Pozionistica":"https://felixfelicisharrypottergdr.forumfree.it/?t=80408073#","Conoscenza Scolastica":"https://felixfelicisharrypottergdr.forumfree.it/?t=80421518#","Altra Conoscenza Scolastica":"https://felixfelicisharrypottergdr.forumfree.it/?t=80421518#"};
   var ANCHOR_OVERRIDES = {"aeremsignum":"aeremsignum","alohomora":"alohomora","animaleusnobodyx":"animaleus","animatus":"animatus","aperio":"aperio","avadakedavra":"avadakedavra","bombarda":"bombarda","colloportus":"collo","confractus":"confractus","defodio":"defodio","deletrius":"deletrius","diffindo":"diffindo","diminuendo":"diminuendo","energiamagicadifensiva":"energiamagica","energiamagicaoffensiva":"energiamagica","engorgio":"engorgio","esorcista":"esorcista","evanesco":"evanesco","evocatio":"evocatio","expectopatronum":"expectopatronum","expelliarmus":"expelliarmus","fiantoduri":"fiantoduri","finiteincantatem":"finiteincantatem","flagrante":"flagrante","illusioobjectis":"illusioobjectis","indissolubilis":"indissolubilis","intermediariofaunico":"intermediariofaunico","iterumpostme":"iterumpostme","legilimens":"legilimens","liberacorpus":"liberacorpus","lumosmaxima":"lumosmaxima","lumos":"lumos","manualitamedimagica":"manualità","meteocanis":"meteocanis","meteoincanto":"meteoincanto","meteorecanto":"meteorecanto","mimicalimbica":"mimica","muto":"muto","nihilmalus":"nihil","nox":"nox","obliterate":"obliterate","oblivion":"oblivion","partistemporus":"partistemporus","priorincantatio":"priorincantatio","protegohorribilis":"protegohorribilis","protegototalum":"protegototalum","protegovolantis":"protegovolantis","proteus":"proteus","quietus":"quietus","raptaque":"raptaque","reducio":"reducio","reinnerva":"reinnerva","reparifarge":"reparifarge","repelloinimicum":"repelloinimicum","riddikulus":"riddikulus","scriptamanent":"scripta","somministratoreomnis":"somministratoreo","sonorus":"sonorus","spezzaincantesimi":"spezzaincantesimi","stupeficium":"stupeficium","toccoverde":"tocco","ventus":"ventus","verto":"verto","vocatus":"vocatus","vulnerasanentur":"vulnera","divinazionedelfuoco":"fuoco","meditazione":"meditazione","yoga":"yoga","spezzamento":"spezzamento","esorcismo":"esorcismo","manualitatecnica":"manualità","memoriatecnica":"memoria","sintesitecnica":"sintesi"};
@@ -1146,7 +1245,6 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       : '<div class="note">Link al regolamento non disponibile per questa fonte.</div>';
     return formula + '<div class="knowledge-link-box">' +
       '<div class="knowledge-link-title">' + escapeHtml(title) + '</div>' +
-      '<p class="knowledge-link-note">Descrizione, Specifiche ed eventuali meccaniche particolari sono consultabili direttamente nel regolamento.</p>' +
       link +
       '</div>';
   }
@@ -1164,9 +1262,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     hideSearchSuggestions();
 
     qs('schedaCard').className = 'card';
+    var family = knowledgeFamily(entry);
     qs('schedaTag').innerHTML =
-      '<span class="scheda-tag">' + escapeHtml(entry.source) + '</span>' +
-      '<span class="scheda-tag">' + escapeHtml(TAG_LABELS[entry.tipologia]) + '</span>';
+      '<span class="scheda-tag family-tag ' + escapeHtml(family.css) + '">' + escapeHtml(family.label) + '</span>' +
+      '<span class="scheda-tag tipologia-tag">' + escapeHtml(TAG_LABELS[entry.tipologia]) + '</span>';
 
     if (entry.tipologia === 'special'){
       qs('schedaBox').innerHTML = renderKnowledgeReference(entry);
