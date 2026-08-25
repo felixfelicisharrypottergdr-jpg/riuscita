@@ -719,7 +719,7 @@
       <input type="text" id="searchInput" autocomplete="off" aria-autocomplete="list" aria-controls="searchSuggestions" placeholder="Digita il nome di un Incantesimo o di una Tecnica...">
       <div id="searchSuggestions" class="search-suggestions hidden" role="listbox" aria-label="Suggerimenti Conoscenze"></div>
     </div>
-    <p class="note">Selezionando una voce imposto automaticamente la Tipologia e il Nome della Conoscenza e ti collego direttamente alla relativa voce del regolamento.</p>
+    <p class="note">Seleziona una voce dall’elenco: il tool riconosce automaticamente la Tipologia della Conoscenza, imposta il Nome e ti collega direttamente alla relativa voce del regolamento.</p>
   </div>
 
   <div class="card hidden" id="schedaCard">
@@ -748,24 +748,14 @@
     <div class="dado-extra-list" id="dadoExtraList"></div>
   </div>
 
-  <div class="card">
-    <p class="step-label"><span class="num">1</span>Tipologia della Conoscenza</p>
-    <div class="btn-grid" id="tipologiaGrid">
-      <div class="choice" data-value="autoconclusiva">Autoconclusiva</div>
-      <div class="choice" data-value="scolastica">Scolastica</div>
-      <div class="choice" data-value="extra">Extra</div>
-      <div class="choice" data-value="avanzata">Avanzata</div>
-    </div>
-  </div>
-
   <div class="card hidden" id="autoconclusivaCard">
-    <p class="step-label"><span class="num">2</span>Riuscita</p>
+    <p class="step-label"><span class="num">1</span>Riuscita</p>
     <p class="note">Le Conoscenze Autoconclusive riescono sempre, senza bisogno di alcun tiro di dado: sia PG Studenti che PG Adulti le conoscono e le sanno usare con sicurezza.</p>
     <p class="note">Se la Conoscenza è contrassegnata da un Asterisco (*), questo vale solo per l'evocazione: l'esito, quando va a impattare su un altro PG, un PNG o un elemento dell'ambientazione, resta comunque da stabilire con il Narratore.</p>
   </div>
 
-  <div class="card" id="pgCard">
-    <p class="step-label"><span class="num">2</span>Chi evoca la Conoscenza</p>
+  <div class="card hidden" id="pgCard">
+    <p class="step-label"><span class="num">1</span>Chi evoca la Conoscenza</p>
     <div class="btn-grid" id="pgGrid">
       <div class="choice" data-value="studente">PG Studente</div>
       <div class="choice" data-value="adulto">PG Adulto</div>
@@ -773,7 +763,7 @@
   </div>
 
   <div class="card hidden" id="studenteCard">
-    <p class="step-label"><span class="num">3</span>Voto nella Materia collegata</p>
+    <p class="step-label"><span class="num">2</span>Voto nella Materia collegata</p>
     <select id="votoSelect">
       <option value="troll">Troll</option>
       <option value="desolante">Desolante</option>
@@ -786,12 +776,12 @@
   </div>
 
   <div class="card hidden" id="adultoScolasticaCard">
-    <p class="step-label"><span class="num">3</span>Riuscita</p>
+    <p class="step-label"><span class="num">2</span>Riuscita</p>
     <p class="note">I PG Adulti applicano sempre le Conoscenze Scolastiche al 100% della loro Forza: nessun tiro è strettamente necessario, ma puoi comunque tirare per il log.</p>
   </div>
 
   <div class="card hidden" id="adultoExtraCard">
-    <p class="step-label"><span class="num">3</span>Sapienza affine</p>
+    <p class="step-label"><span class="num">2</span>Sapienza affine</p>
     <div class="btn-grid" id="sapienzaExtraGrid">
       <div class="choice" data-value="senza">Senza Sapienza affine</div>
       <div class="choice" data-value="con">Con Sapienza affine</div>
@@ -799,7 +789,7 @@
   </div>
 
   <div class="card hidden" id="adultoAvanzataCard">
-    <p class="step-label"><span class="num">3</span>Livello di Sapienza affine</p>
+    <p class="step-label"><span class="num">2</span>Livello di Sapienza affine</p>
     <select id="sapienzaAvanzataSelect">
       <option value="senza">Nessuna Sapienza affine</option>
       <option value="lv1">Sapienza Livello 1</option>
@@ -810,8 +800,8 @@
     </select>
   </div>
 
-  <div class="card" id="detailsCard">
-    <p class="step-label"><span class="num">4</span>Dettagli del tiro</p>
+  <div class="card hidden" id="detailsCard">
+    <p class="step-label"><span class="num">3</span>Dettagli del tiro</p>
     <label class="field-label" for="nomePg">Nome del PG (facoltativo)</label>
     <input type="text" id="nomePg" placeholder="Es. Harry Potter">
     <label class="field-label" for="nomeConoscenza">Nome della Conoscenza (facoltativo)</label>
@@ -840,14 +830,14 @@
   </div>
 
   <div class="card hidden" id="pasteCard">
-    <p class="step-label"><span class="num">5</span>Esito ottenuto sul forum</p>
+    <p class="step-label"><span class="num">4</span>Esito ottenuto sul forum</p>
     <p class="note">Dopo aver postato il codice qui sopra sul forum, incolla qui il numero uscito dal tiro [dice=1d10].</p>
     <label class="field-label" for="risultatoInput">Risultato del dado (1-10)</label>
     <input type="number" id="risultatoInput" min="1" max="10" step="1" placeholder="Es. 7">
     <button class="roll-btn" id="calcBtn" type="button">Calcola risultato</button>
   </div>
 
-  <div class="card" id="resultCard">
+  <div class="card hidden" id="resultCard">
     <div class="empty-result" id="emptyResult">Completa le scelte sopra, posta il codice sul forum e incolla il risultato per scoprire la riuscita.</div>
     <div class="result hidden" id="resultBody">
       <div class="die-row">
@@ -1182,7 +1172,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       qs('schedaBox').innerHTML = renderKnowledgeReference(entry);
       qs('nomeConoscenza').value = entry.name;
       state.tipologia = null;
-      setActive('tipologiaGrid', null);
+      state.pg = null;
+      state.sapienzaExtra = null;
       refreshVisibility();
       qs('dadoExtraList').innerHTML = '';
       refreshModifierSummary();
@@ -1195,7 +1186,6 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
     qs('nomeConoscenza').value = entry.name;
     state.tipologia = entry.tipologia;
-    setActive('tipologiaGrid', entry.tipologia);
     refreshVisibility();
     refreshModifierSummary();
     sendHeightSoon();
@@ -1205,7 +1195,12 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var exact = findConoscenza(qs('searchInput').value);
     if (!exact && state.selectedEntry){
       state.selectedEntry = null;
+      state.tipologia = null;
+      qs('schedaCard').className = 'card hidden';
       qs('modifiersCard').className = 'card hidden';
+      refreshVisibility();
+      refreshModifierSummary();
+      sendHeightSoon();
     }
     renderSearchSuggestions();
   });
@@ -1268,14 +1263,6 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }
   }
 
-  wireGrid('tipologiaGrid', function(v){
-    state.tipologia = v;
-    setActive('tipologiaGrid', v);
-    refreshVisibility();
-    refreshModifierSummary();
-    sendHeightSoon();
-  });
-
   wireGrid('pgGrid', function(v){
     state.pg = v;
     setActive('pgGrid', v);
@@ -1318,22 +1305,33 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     qs('adultoExtraCard').className = 'card hidden';
     qs('adultoAvanzataCard').className = 'card hidden';
     qs('autoconclusivaCard').className = 'card hidden';
-    qs('pgCard').className = 'card';
+    qs('pgCard').className = 'card hidden';
+    qs('detailsCard').className = 'card hidden';
+    qs('resultCard').className = 'card hidden';
     qs('bonusRowField').className = '';
+
+    /* Nessuna scelta manuale della Tipologia: il flusso parte solo da una
+       Conoscenza valida selezionata nel database. */
+    if (!state.selectedEntry || !state.tipologia){
+      refreshTabella();
+      return;
+    }
+
+    qs('detailsCard').className = 'card';
+    qs('resultCard').className = 'card';
 
     if (state.tipologia === 'autoconclusiva'){
       qs('autoconclusivaCard').className = 'card';
-      qs('pgCard').className = 'card hidden';
       qs('bonusRowField').className = 'hidden';
       refreshTabella();
       return;
     }
 
+    qs('pgCard').className = 'card';
+
     if (state.pg === 'studente'){
-      if (state.tipologia){
-        qs('studenteCard').className = 'card';
-        updateVotoNote();
-      }
+      qs('studenteCard').className = 'card';
+      updateVotoNote();
     }
     if (state.pg === 'adulto'){
       if (state.tipologia === 'scolastica'){
