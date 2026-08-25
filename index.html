@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -2058,27 +2059,25 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     sendHeightSoon();
   });
 
+  /* ===== ALTEZZA IFRAME — misura solo il contenuto reale, non il viewport ===== */
   var lastSentHeight = 0;
+  var heightSeq = 0;
+
   function getRealDocumentHeight(){
     var body = document.body;
-    var doc = document.documentElement;
     var wrap = document.querySelector('.wrap');
-    var values = [];
+    if (!body || !wrap){ return 0; }
 
-    if (body){
-      values.push(body.scrollHeight || 0, body.offsetHeight || 0);
-    }
-    if (doc){
-      values.push(doc.scrollHeight || 0, doc.offsetHeight || 0);
-    }
-    if (wrap && body){
-      var bodyStyle = window.getComputedStyle(body);
-      var paddingTop = parseFloat(bodyStyle.paddingTop) || 0;
-      var paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
-      values.push(Math.ceil(wrap.getBoundingClientRect().height + paddingTop + paddingBottom));
-    }
+    var bodyStyle = window.getComputedStyle(body);
+    var paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
+    var rect = wrap.getBoundingClientRect();
 
-    return Math.ceil(Math.max.apply(Math, values.concat([0])) + 12);
+    /*
+      NON usare body.scrollHeight / documentElement.scrollHeight qui:
+      dentro un iframe possono coincidere con l'altezza del viewport e
+      creare un ciclo infinito iframe -> resize -> altezza maggiore.
+    */
+    return Math.ceil(rect.bottom + window.pageYOffset + paddingBottom + 2);
   }
 
   function sendHeight(){
@@ -2086,7 +2085,12 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var height = getRealDocumentHeight();
     if (height > 0 && Math.abs(height - lastSentHeight) > 1){
       lastSentHeight = height;
-      window.parent.postMessage({tipo:'riuscita-height', height:height}, '*');
+      heightSeq += 1;
+      window.parent.postMessage({
+        tipo:'riuscita-height',
+        height:height,
+        seq:heightSeq
+      }, '*');
     }
   }
 
@@ -2094,16 +2098,16 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function sendHeightSoon(){
     while (heightTimers.length){ clearTimeout(heightTimers.pop()); }
     sendHeight();
-    heightTimers.push(setTimeout(sendHeight, 50));
-    heightTimers.push(setTimeout(sendHeight, 180));
-    heightTimers.push(setTimeout(sendHeight, 420));
+    heightTimers.push(setTimeout(sendHeight, 60));
+    heightTimers.push(setTimeout(sendHeight, 220));
+    heightTimers.push(setTimeout(sendHeight, 500));
   }
 
   window.addEventListener('load', sendHeightSoon);
   window.addEventListener('resize', sendHeightSoon);
   document.addEventListener('toggle', sendHeightSoon, true);
 
-  var observedRoot = document.querySelector('.wrap') || document.body;
+  var observedRoot = document.querySelector('.wrap');
   if (window.ResizeObserver && observedRoot){
     var resizeObserver = new ResizeObserver(sendHeightSoon);
     resizeObserver.observe(observedRoot);
