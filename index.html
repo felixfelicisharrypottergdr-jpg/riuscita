@@ -759,8 +759,14 @@
   #autoDadiExtraWrap .auto-extra-title{margin:0 0 4px;font-size:17px;}
   #autoDadiExtraWrap .auto-extra-note{margin:0 0 9px;font-size:13px;}
   #autoDadiExtraWrap .dado-extra-list{margin-top:0;display:grid;gap:7px;}
-  .auto-roll-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 9px;border:1px solid var(--line);border-radius:6px;background:#fffaf0;}
+  .auto-roll-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:6px;background:#fffaf0;transition:opacity .15s,box-shadow .15s,border-color .15s;}
+  .auto-roll-item.auto-roll-current{border:2px solid var(--high);box-shadow:0 0 0 3px rgba(57,102,44,.10);background:#fbfff7;}
+  .auto-roll-item.auto-roll-not-current{opacity:.58;}
   .auto-roll-formula{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:5px 8px;border-radius:16px;background:var(--maroon);color:var(--parchment);font-family:Consolas,"Courier New",monospace;font-size:12px;font-weight:700;white-space:nowrap;}
+  .auto-roll-use{display:block;margin:4px 0 2px;padding:6px 8px;border-radius:5px;background:rgba(137,44,15,.07);color:#3f2b19;font-size:12px;line-height:1.4;}
+  .auto-roll-use strong{color:var(--maroon-deep);}
+  .auto-roll-current-badge{display:inline-block;margin:0 0 5px;padding:3px 8px;border-radius:999px;background:var(--high);color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;}
+  .auto-roll-skip-badge{display:inline-block;margin:0 0 5px;padding:3px 8px;border-radius:999px;background:#8a765a;color:#fffaf0;font-size:10.5px;}
   .auto-roll-info{min-width:0;color:#4a351f;font-size:12.5px;line-height:1.35;}
   .auto-roll-info .auto-roll-main-context{display:block;overflow-wrap:anywhere;}
   .auto-roll-semantic-label{display:block;color:var(--maroon-deep);font-size:13px;line-height:1.3;margin-bottom:3px;}
@@ -887,7 +893,7 @@
 
     <div id="autoDadiExtraWrap" class="hidden">
       <p class="step-label auto-extra-title">Tiri extra previsti dal regolamento</p>
-      <p class="note auto-extra-note">Il tool indica automaticamente a cosa serve ogni dado e, quando necessario, include nel codice anche la legenda degli esiti.</p>
+      <p class="note auto-extra-note"><b>Non scegliere il dado in base alla formula.</b> Ogni riquadro indica esattamente <b>quando usarlo</b> (tipo di PG, Sapienza, percentuale di riuscita e scopo). Dopo aver calcolato la riuscita, il dado corretto viene evidenziato automaticamente. Se una stessa formula serve a due scopi diversi, viene mostrata in riquadri separati.</p>
       <div class="dado-extra-list" id="dadoExtraList"></div>
     </div>
   </div>
@@ -1090,7 +1096,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     scolastica:'Scolastica', extra:'Extra', avanzata:'Avanzata'
   };
 
-  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null };
+  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null };
 
   function qs(id){ return document.getElementById(id); }
   function escapeHtml(value){
@@ -1832,6 +1838,132 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return '';
   }
 
+  function rollPurposeKey(entry, roll, context){
+    var c = cleanRollContext(context);
+    var f = String((roll && roll.formula) || '').replace(/\s+/g,'').toLowerCase();
+    var low = c.toLowerCase().replace(/\s+/g,' ');
+    var compact = low.replace(/\s+/g,'');
+    var idx = compact.indexOf(f);
+    if (idx !== -1){
+      /* Ricava la parte dopo la formula usando una ricerca più permissiva nel testo originale. */
+      var rawIdx = low.indexOf(String((roll && roll.formula) || '').toLowerCase().replace(/\s+/g,' '));
+      var tail = rawIdx !== -1 ? low.slice(rawIdx + String((roll && roll.formula) || '').length).trim() : '';
+      var after = tail.match(/^([a-zà-ÿ][a-zà-ÿ’' -]{0,40})/i);
+      if (after && after[1]){
+        var unit = after[1].replace(/\s+(?:—|se|per|con|e |oppure).*$/i,'').replace(/[.,;:].*$/,'').trim();
+        if (unit){ return 'qty:' + unit; }
+      }
+    }
+    var pseudo = {formula:roll.formula,contexts:[context]};
+    return 'label:' + deriveRollLabel(entry,pseudo).toLowerCase();
+  }
+
+  function expandRollCases(entry, roll){
+    var contexts = (roll && roll.contexts) || [];
+    if (!contexts.length){ return [roll]; }
+    var groups = {}, order = [];
+    for (var i=0;i<contexts.length;i++){
+      var key = rollPurposeKey(entry,roll,contexts[i]);
+      if (!groups[key]){ groups[key]={formula:roll.formula,contexts:[]}; order.push(key); }
+      groups[key].contexts.push(contexts[i]);
+    }
+    var out=[];
+    for (var j=0;j<order.length;j++){ out.push(groups[order[j]]); }
+    return out;
+  }
+
+  function contextConditionParts(context){
+    var c = cleanRollContext(context);
+    var low = c.toLowerCase();
+    var parts=[];
+    var audience='';
+    if (/pg studenti|lanciato da pg studenti|lanciata da pg studenti/.test(low)) audience='PG Studente';
+    else if (/pg adulti senza sapienza/.test(low)){
+      var m0=c.match(/PG Adulti senza Sapienza\s+([^—·:]+?)(?:\s+—|\s+-\s+\d+%|$)/i);
+      audience='PG Adulto senza Sapienza'+(m0&&m0[1]?' '+m0[1].trim():' affine');
+    } else if (/pg adulti con sapienza/.test(low)){
+      var m1=c.match(/PG Adulti con Sapienza\s+([^—·:]+?)(?:\s+—|\s+-\s+\d+%|$)/i);
+      audience='PG Adulto con Sapienza'+(m1&&m1[1]?' '+m1[1].trim():' affine');
+    } else if (/pg adulti/.test(low)) audience='PG Adulto';
+    if (audience){ parts.push(audience); }
+
+    var pm=c.match(/(?:^|—|\s)-?\s*(100|66|33|0)%\s*:/i);
+    if (!pm){ pm=c.match(/(?:riuscita|potenza|forza)[^0-9]{0,18}(100|66|33|0)%/i); }
+    if (pm){ parts.push('riuscita '+pm[1]+'%'); }
+
+    if (!parts.length){
+      if (/risch|ammal|contrae|contragg|perde il controllo/.test(low)) return 'Ogni volta che usi questa Conoscenza: è un tiro di rischio separato.';
+      return 'Quando si verifica la condizione descritta in questo riquadro.';
+    }
+    return parts.join(' · ');
+  }
+
+  function rollUseConditions(roll){
+    var contexts=(roll&&roll.contexts)||[], out=[];
+    for (var i=0;i<contexts.length;i++){
+      var s=contextConditionParts(contexts[i]);
+      if (s && out.indexOf(s)===-1)out.push(s);
+    }
+    return out;
+  }
+
+  function currentSapienzaMode(){
+    if (state.pg !== 'adulto') return null;
+    if (state.tipologia === 'extra'){
+      if (state.sapienzaExtra === 'con') return 'con';
+      if (state.sapienzaExtra === 'senza') return 'senza';
+      return null;
+    }
+    if (state.tipologia === 'avanzata'){
+      var lv=(qs('sapienzaAvanzataSelect')||{}).value||'';
+      if (!lv) return null;
+      return lv==='senza'?'senza':'con';
+    }
+    return null;
+  }
+
+  function contextMatchStatus(context){
+    var c=cleanRollContext(context), low=c.toLowerCase();
+    var hasSpecific=false, unknown=false;
+    if (/pg studenti|lanciato da pg studenti|lanciata da pg studenti/.test(low)){
+      hasSpecific=true;
+      if (!state.pg) unknown=true; else if (state.pg!=='studente') return false;
+    }
+    if (/pg adulti/.test(low)){
+      hasSpecific=true;
+      if (!state.pg) unknown=true; else if (state.pg!=='adulto') return false;
+    }
+    if (/pg adulti senza sapienza/.test(low)){
+      hasSpecific=true; var sm=currentSapienzaMode();
+      if (sm===null) unknown=true; else if (sm!=='senza') return false;
+    }
+    if (/pg adulti con sapienza/.test(low)){
+      hasSpecific=true; var sm2=currentSapienzaMode();
+      if (sm2===null) unknown=true; else if (sm2!=='con') return false;
+    }
+    var pm=c.match(/(?:^|—|\s)-?\s*(100|66|33|0)%\s*:/i);
+    if (!pm){ pm=c.match(/(?:riuscita|potenza|forza)[^0-9]{0,18}(100|66|33|0)%/i); }
+    if (pm){
+      hasSpecific=true;
+      if (state.lastPct===null || typeof state.lastPct==='undefined') unknown=true;
+      else if (Number(pm[1])!==Number(state.lastPct)) return false;
+    }
+    if (!hasSpecific) return true;
+    return unknown ? null : true;
+  }
+
+  function rollMatchStatus(roll){
+    var contexts=(roll&&roll.contexts)||[];
+    if (!contexts.length) return null;
+    var sawUnknown=false;
+    for (var i=0;i<contexts.length;i++){
+      var s=contextMatchStatus(contexts[i]);
+      if (s===true) return true;
+      if (s===null) sawUnknown=true;
+    }
+    return sawUnknown?null:false;
+  }
+
   function rollPresentation(entry, roll){
     return {
       label: deriveRollLabel(entry, roll),
@@ -1850,7 +1982,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function makeAutoRollItem(entry, roll){
     var p = rollPresentation(entry, roll);
     var item = document.createElement('div');
-    item.className = 'auto-roll-item';
+    var match = rollMatchStatus(roll);
+    item.className = 'auto-roll-item' + (match===true?' auto-roll-current':(match===false?' auto-roll-not-current':''));
 
     var formula = document.createElement('span');
     formula.className = 'auto-roll-formula';
@@ -1860,10 +1993,32 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var info = document.createElement('div');
     info.className = 'auto-roll-info';
 
+    if (match === true){
+      var yes=document.createElement('span');
+      yes.className='auto-roll-current-badge';
+      yes.textContent='Questo è il dado da usare';
+      info.appendChild(yes);
+    } else if (match === false && state.lastPct !== null){
+      var no=document.createElement('span');
+      no.className='auto-roll-skip-badge';
+      no.textContent='Non serve con le scelte attuali';
+      info.appendChild(no);
+    }
+
     var label = document.createElement('strong');
     label.className = 'auto-roll-semantic-label';
     label.textContent = p.label;
     info.appendChild(label);
+
+    var use=document.createElement('span');
+    use.className='auto-roll-use';
+    var conds=rollUseConditions(roll);
+    if (conds.length===1){
+      use.innerHTML='<strong>Quando usarlo:</strong> '+escapeHtml(conds[0]);
+    } else {
+      use.innerHTML='<strong>Quando usarlo:</strong><br>• '+conds.map(escapeHtml).join('<br>• ');
+    }
+    info.appendChild(use);
 
     if (p.quote){
       var q = document.createElement('div');
@@ -1873,7 +2028,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     } else {
       var direct = document.createElement('span');
       direct.className = 'auto-roll-direct-note';
-      direct.textContent = 'Il numero ottenuto è direttamente il risultato del tiro.';
+      direct.textContent = 'Il numero ottenuto è direttamente il risultato del tiro: non devi consultare una tabella di esiti.';
       info.appendChild(direct);
     }
 
@@ -1896,7 +2051,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     list.innerHTML = '';
     var rolls = entry && entry.extraRolls ? entry.extraRolls : [];
     if (!rolls.length){ wrap.className = 'hidden'; sendHeightSoon(); return; }
-    for (var i=0; i<rolls.length; i++){ list.appendChild(makeAutoRollItem(entry, rolls[i])); }
+    for (var i=0; i<rolls.length; i++){
+      var cases=expandRollCases(entry,rolls[i]);
+      for (var j=0;j<cases.length;j++){ list.appendChild(makeAutoRollItem(entry,cases[j])); }
+    }
     wrap.className = '';
     sendHeightSoon();
   }
@@ -2007,6 +2165,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function selectConoscenza(entry){
     if (!entry){ return; }
     state.selectedEntry = entry;
+    state.lastPct = null;
     qs('searchInput').value = entry.name;
     hideSearchSuggestions();
 
@@ -2046,6 +2205,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (!exact && state.selectedEntry){
       state.selectedEntry = null;
       state.tipologia = null;
+      state.lastPct = null;
       qs('schedaCard').className = 'card hidden';
       qs('autoDadiExtraWrap').className = 'hidden';
       qs('dadoExtraList').innerHTML = '';
@@ -2119,21 +2279,31 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   wireGrid('pgGrid', function(v){
     state.pg = v;
+    state.lastPct = null;
     setActive('pgGrid', v);
     refreshVisibility();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
   });
 
   wireGrid('sapienzaExtraGrid', function(v){
     state.sapienzaExtra = v;
+    state.lastPct = null;
     setActive('sapienzaExtraGrid', v);
     refreshTabella();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
   });
 
   qs('votoSelect').addEventListener('change', function(){
+    state.lastPct = null;
     updateVotoNote();
     refreshTabella();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
   });
-  qs('sapienzaAvanzataSelect').addEventListener('change', refreshTabella);
+  qs('sapienzaAvanzataSelect').addEventListener('change', function(){
+    state.lastPct = null;
+    refreshTabella();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
+  });
 
   var codeInputs = ['nomePg','nomeConoscenza','linkRole'];
   for (var ci=0; ci<codeInputs.length; ci++){
@@ -2486,6 +2656,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var autoBadge = qs('pctBadge');
     autoBadge.className = 'pct-badge pct-100';
     autoBadge.textContent = '100%';
+    state.lastPct = 100;
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
     qs('flavorText').textContent = AUTO_FLAVOR;
     qs('timestamp').textContent = 'Registrato alle ' + stamp;
 
@@ -2556,6 +2728,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var badge = qs('pctBadge');
     badge.className = 'pct-badge pct-' + pct;
     badge.textContent = pct + '%';
+    state.lastPct = pct;
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
     qs('flavorText').textContent = FLAVORS[pct];
     qs('timestamp').textContent = 'Calcolato alle ' + stamp;
     mzBridgePublishResult(pct,n,total,bonus);
@@ -2602,6 +2776,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     qs('resultBody').className = 'result hidden';
     qs('emptyResult').className = 'empty-result';
     qs('risultatoInput').value = '';
+    state.lastPct = null;
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
     kbResetCurrentMarkers();
     refreshDiceCode();
     refreshModifierSummary();
