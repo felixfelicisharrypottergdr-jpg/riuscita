@@ -781,6 +781,38 @@
   .auto-roll-copy:hover{background:var(--maroon);color:var(--parchment);}
   @media(max-width:640px){.auto-roll-item{grid-template-columns:auto minmax(0,1fr);}.auto-roll-copy{grid-column:1 / -1;width:100%;}}
 
+  /* ===== v21 — Specifiche contestuali: mostra solo il blocco del PG scelto ===== */
+  #autoDadiExtraWrap{padding:14px 18px;}
+  #autoDadiExtraWrap .dado-extra-list{display:grid;gap:10px;}
+  .rule-audience-block{border:1px solid var(--line);border-radius:7px;background:#fffaf0;overflow:hidden;}
+  .rule-group-title{padding:8px 12px;background:rgba(201,162,39,.12);border-bottom:1px solid rgba(184,154,90,.55);font-family:'magic',Georgia,"Times New Roman",serif;font-size:18px;color:var(--maroon-deep);}
+  .rule-audience-title{padding:10px 12px 4px;font-weight:700;font-style:italic;color:var(--maroon-deep);font-size:14px;}
+  .rule-audience-intro{padding:0 12px 9px;color:#60492f;font-size:13px;line-height:1.4;}
+  .rule-outcomes{border-top:1px dashed rgba(184,154,90,.62);}
+  .rule-outcome-row{display:grid;grid-template-columns:74px minmax(0,1fr);gap:8px;align-items:center;padding:9px 12px;border-top:1px solid rgba(184,154,90,.28);}
+  .rule-outcome-row:first-child{border-top:0;}
+  .rule-outcome-pct{font-family:Georgia,"Times New Roman",serif;font-weight:700;color:var(--maroon);white-space:nowrap;}
+  .rule-outcome-value{min-width:0;color:#3c2a19;line-height:1.4;}
+  .rule-dice-line{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .rule-dice-chip{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:16px;background:var(--maroon);color:#fff8e8;font-family:Consolas,"Courier New",monospace;font-size:12px;font-weight:700;white-space:nowrap;}
+  .rule-dice-copy{padding:5px 9px;border:1px solid var(--maroon);border-radius:5px;background:transparent;color:var(--maroon);font-family:Georgia,"Times New Roman",serif;font-size:11.5px;cursor:pointer;white-space:nowrap;}
+  .rule-dice-copy:hover{background:var(--maroon);color:var(--parchment);}
+  .rule-dice-paste{padding:5px 8px;border:1px solid var(--line);border-radius:5px;background:#f3e5c4;color:#5d3b24;font-family:Georgia,"Times New Roman",serif;font-size:11px;cursor:pointer;white-space:nowrap;}
+  .rule-dice-paste:hover{border-color:var(--maroon);color:var(--maroon);}
+  .rule-dice-affix{font-size:12.5px;color:#4b351f;}
+  .rule-dice-result-wrap{display:inline-flex;align-items:center;gap:5px;margin-left:2px;}
+  .rule-dice-result-wrap label{font-size:11.5px;color:#745d3e;white-space:nowrap;}
+  .rule-dice-result{width:66px!important;padding:5px 7px!important;font-size:12px!important;height:30px;}
+  .rule-dice-resolved{display:inline-block;min-width:95px;font-size:12px;font-weight:700;color:var(--high);}
+  .rule-context-prompt{padding:12px 14px;border:1px dashed var(--line);border-radius:7px;background:#fffaf0;color:#684f34;line-height:1.45;}
+  .rule-context-prompt b{color:var(--maroon-deep);}
+  .rule-unconditional-title{margin:2px 0 -1px;font-family:'magic',Georgia,"Times New Roman",serif;font-size:17px;color:var(--maroon-deep);}
+  @media(max-width:640px){
+    .rule-outcome-row{grid-template-columns:1fr;gap:3px;}
+    .rule-dice-line{align-items:flex-start;}
+    .rule-dice-result-wrap{width:100%;margin-left:0;margin-top:2px;}
+  }
+
   /* ===== BONUS STRUTTURATI — RIUSCITA CONOSCENZE ===== */
   .knowledge-bonus-manager{
     margin-top:16px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;
@@ -912,19 +944,8 @@
     <p class="step-label"><span class="num">0</span>Conoscenza selezionata <span id="schedaTag"></span></p>
     <div class="scheda-box" id="schedaBox"></div>
 
-    <div id="autoDadiExtraWrap" class="hidden">
-      <p class="step-label auto-extra-title">Tiri extra previsti dal regolamento</p>
-      <p class="note auto-extra-note"><b>Non scegliere il dado in base alla formula.</b> Ogni riquadro indica esattamente <b>quando usarlo</b> (tipo di PG, Sapienza, percentuale di riuscita e scopo). Dopo aver calcolato la riuscita, il dado corretto viene evidenziato automaticamente. Se una stessa formula serve a due scopi diversi, viene mostrata in riquadri separati.</p>
-      <div class="dado-extra-list" id="dadoExtraList"></div>
-    </div>
   </div>
 
-
-
-  <div class="card hidden" id="magizoologiaBridgeCard">
-    <p class="step-label"><span class="num"><i class="fa-solid fa-paw" aria-hidden="true"></i></span>Collegamento Magizoologia</p>
-    <div class="mz-bridge-box" id="magizoologiaBridgeBody"></div>
-  </div>
 
   <div class="card hidden" id="autoconclusivaCard">
     <p class="step-label"><span class="num">1</span>Riuscita</p>
@@ -960,6 +981,7 @@
 
   <div class="card hidden" id="adultoExtraCard">
     <p class="step-label"><span class="num">2</span>Sapienza affine</p>
+    <p class="note">Serve sia quando la Sapienza modifica la riuscita, sia per mostrare automaticamente le Specifiche corrette della Conoscenza.</p>
     <div class="btn-grid" id="sapienzaExtraGrid">
       <div class="choice" data-value="senza">Senza Sapienza affine</div>
       <div class="choice" data-value="con">Con Sapienza affine</div>
@@ -976,6 +998,18 @@
       <option value="lv4">Sapienza Livello 4</option>
       <option value="lv5">Sapienza Livello 5</option>
     </select>
+  </div>
+
+  <div id="autoDadiExtraWrap" class="card hidden">
+    <p class="step-label auto-extra-title"><span class="num"><i class="fa-solid fa-dice" aria-hidden="true"></i></span>Effetti legati alla riuscita</p>
+    <p class="note auto-extra-note">Il tool mostra soltanto la parte delle Specifiche che riguarda il PG selezionato. Le righe con un dado hanno il codice copiabile e un campo dove riportare il risultato del dado secondario.</p>
+    <div class="dado-extra-list" id="dadoExtraList"></div>
+  </div>
+
+
+  <div class="card hidden" id="magizoologiaBridgeCard">
+    <p class="step-label"><span class="num"><i class="fa-solid fa-paw" aria-hidden="true"></i></span>Collegamento Magizoologia</p>
+    <div class="mz-bridge-box" id="magizoologiaBridgeBody"></div>
   </div>
 
   <div class="card" id="detailsCard">
@@ -1116,7 +1150,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     scolastica:'Scolastica', extra:'Extra', avanzata:'Avanzata'
   };
 
-  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null };
+  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null, extraRollResults:{} };
 
   function qs(id){ return document.getElementById(id); }
   function escapeHtml(value){
@@ -1926,16 +1960,15 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   function currentSapienzaMode(){
     if (state.pg !== 'adulto') return null;
-    if (state.tipologia === 'extra'){
-      if (state.sapienzaExtra === 'con') return 'con';
-      if (state.sapienzaExtra === 'senza') return 'senza';
-      return null;
-    }
     if (state.tipologia === 'avanzata'){
       var lv=(qs('sapienzaAvanzataSelect')||{}).value||'';
       if (!lv) return null;
       return lv==='senza'?'senza':'con';
     }
+    /* Per Extra serve anche alla riuscita; per Scolastiche serve solo a
+       filtrare le Specifiche aggiuntive che distinguono con/senza Sapienza. */
+    if (state.sapienzaExtra === 'con') return 'con';
+    if (state.sapienzaExtra === 'senza') return 'senza';
     return null;
   }
 
@@ -2062,18 +2095,214 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return item;
   }
 
-  function renderAutoExtraRolls(entry){
-    var wrap = qs('autoDadiExtraWrap');
-    var list = qs('dadoExtraList');
-    list.innerHTML = '';
-    var rolls = entry && entry.extraRolls ? entry.extraRolls : [];
-    if (!rolls.length){ wrap.className = 'hidden'; sendHeightSoon(); return; }
-    for (var i=0; i<rolls.length; i++){
-      var cases=expandRollCases(entry,rolls[i]);
-      for (var j=0;j<cases.length;j++){ list.appendChild(makeAutoRollItem(entry,cases[j])); }
+  function rulePlainText(fragment){
+    var x=String(fragment||'')
+      .replace(/\[URL=[^\]]+\]([\s\S]*?)\[\/URL\]/gi,'$1')
+      .replace(/\[URL[^\]]*\]/gi,'').replace(/\[\/URL\]/gi,'')
+      .replace(/\[IMG[^\]]*\][\s\S]*?\[\/IMG\]/gi,'')
+      .replace(/<br\s*\/?>/gi,'\n')
+      .replace(/<\/(?:div|p|li|tr|h1|h2|h3|h4)>/gi,'\n')
+      .replace(/<[^>]+>/g,'');
+    var ta=document.createElement('textarea'); ta.innerHTML=x; x=ta.value;
+    return x.replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').replace(/\n[ \t]+/g,'\n').trim();
+  }
+
+  function ruleAudienceKey(label){
+    var low=String(label||'').toLowerCase();
+    if (/pg\s+studenti/.test(low)) return 'studente';
+    if (/pg\s+adulti\s+senza\s+sapienza/.test(low)) return 'adulto-senza';
+    if (/pg\s+adulti\s+con\s+sapienza/.test(low)) return 'adulto-con';
+    if (/pg\s+adulti/.test(low)) return 'adulto';
+    return '';
+  }
+
+  function parseRuleOutcomeLines(bodyText){
+    var lines=String(bodyText||'').split(/\n+/), intro=[], outcomes=[];
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i].replace(/^\s*[•·]\s*/,'').trim();
+      if(!line) continue;
+      var m=line.match(/^[-–—]?\s*((?:0|33|66|100)(?:\s*[-–]\s*(?:33|66|100))?)%\s*:\s*(.+)$/i);
+      if(m){
+        var value=m[2].trim();
+        var compact=value.replace(/\s+/g,'');
+        var dm=compact.match(/(?:^|\+)(\d+\+)?(\d*)d(\d+)(?:\+(\d+))?/i);
+        var formula='';
+        if(dm){
+          var token=dm[0].replace(/^\+/,'');
+          formula=normalizeDiceFormula(token);
+        }
+        outcomes.push({pct:m[1].replace(/\s+/g,''),value:value,formula:formula,raw:line});
+      } else if(!/^Specifiche$/i.test(line)){
+        intro.push(line);
+      }
     }
-    wrap.className = '';
-    sendHeightSoon();
+    return {intro:intro.join(' '),outcomes:outcomes};
+  }
+
+  function extractAudienceRuleBlocks(entry){
+    if(!entry||!entry.html) return [];
+    var raw=String(entry.html), details=[], dre=/<details\b[^>]*>([\s\S]*?)<\/details>/gi, dm;
+    while((dm=dre.exec(raw))!==null){ details.push(dm[1]); }
+    if(!details.length){ details=[raw]; }
+    var blocks=[];
+    for(var d=0;d<details.length;d++){
+      var part=details[d], markers=[], re=/<(b|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, m, heading='';
+      while((m=re.exec(part))!==null){
+        var tag=m[1].toLowerCase(), text=rulePlainText(m[2]);
+        if(tag==='b'){
+          heading=/^Specifiche$/i.test(text)?'':text;
+          markers.push({type:'heading',start:m.index,end:re.lastIndex,text:heading});
+        } else {
+          var key=ruleAudienceKey(text);
+          if(key){ markers.push({type:'audience',start:m.index,end:re.lastIndex,label:text,key:key,heading:heading}); }
+        }
+      }
+      for(var i=0;i<markers.length;i++){
+        var mk=markers[i]; if(mk.type!=='audience') continue;
+        var end=part.length;
+        for(var j=i+1;j<markers.length;j++){ if(markers[j].start>mk.start){ end=markers[j].start; break; } }
+        var parsed=parseRuleOutcomeLines(rulePlainText(part.slice(mk.end,end)));
+        if(parsed.outcomes.length){ blocks.push({heading:mk.heading,label:mk.label,key:mk.key,intro:parsed.intro,outcomes:parsed.outcomes}); }
+      }
+    }
+    return blocks;
+  }
+
+  function entryNeedsAdultSapChoice(entry){
+    var blocks=extractAudienceRuleBlocks(entry), hasNo=false,hasYes=false;
+    for(var i=0;i<blocks.length;i++){ if(blocks[i].key==='adulto-senza')hasNo=true; if(blocks[i].key==='adulto-con')hasYes=true; }
+    return hasNo&&hasYes;
+  }
+
+  function selectedAudienceRuleKey(entry){
+    if(state.pg==='studente') return 'studente';
+    if(state.pg!=='adulto') return '';
+    var blocks=extractAudienceRuleBlocks(entry), needs=entryNeedsAdultSapChoice(entry), sm=currentSapienzaMode();
+    if(needs){
+      if(sm==='con') return 'adulto-con';
+      if(sm==='senza') return 'adulto-senza';
+      return '';
+    }
+    for(var i=0;i<blocks.length;i++){ if(blocks[i].key==='adulto') return 'adulto'; }
+    return sm==='con'?'adulto-con':(sm==='senza'?'adulto-senza':'adulto');
+  }
+
+  function diceParts(formula){
+    var f=normalizeDiceFormula(formula),m=f.match(/^(?:(\d+)\+)?(\d*)d(\d+)(?:\+(\d+))?$/i);
+    if(!m)return null;
+    return {before:m[1]?parseInt(m[1],10):0,n:m[2]?parseInt(m[2],10):1,faces:parseInt(m[3],10),after:m[4]?parseInt(m[4],10):0};
+  }
+
+  function ruleResultKey(entry,block,row){
+    return [entry&&entry.name||'',block.heading||'',block.key||'',row.pct||'',row.formula||''].join('|');
+  }
+
+  function replaceFormulaWithResolved(value,formula,total){
+    var compact=normalizeDiceFormula(formula), pattern=compact.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var re=new RegExp(pattern.replace(/\\\+/g,'\\s*\\+\\s*'),'i');
+    var out=String(value||'').replace(re,String(total));
+    return out;
+  }
+
+  function splitOutcomeAroundFormula(value,formula){
+    var raw=String(value||''), compact=normalizeDiceFormula(formula), pattern=compact.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var re=new RegExp(pattern.replace(/\\\+/g,'\\s*\\+\\s*'),'i'),m=re.exec(raw);
+    if(!m)return {before:'',after:raw};
+    var before=raw.slice(0,m.index).trim(),after=raw.slice(m.index+m[0].length).trim();
+    if(before==='+')before='';
+    return {before:before,after:after};
+  }
+
+  function makeRuleOutcomeRow(entry,block,row){
+    var line=document.createElement('div'); line.className='rule-outcome-row';
+    var pct=document.createElement('div'); pct.className='rule-outcome-pct'; pct.textContent=row.pct+'%:'; line.appendChild(pct);
+    var value=document.createElement('div'); value.className='rule-outcome-value';
+    if(!row.formula){ value.textContent=row.value; line.appendChild(value); return line; }
+
+    var dline=document.createElement('div'); dline.className='rule-dice-line';
+    var aff=splitOutcomeAroundFormula(row.value,row.formula);
+    if(aff.before){ var pre=document.createElement('span'); pre.className='rule-dice-affix'; pre.textContent=aff.before; dline.appendChild(pre); }
+    var formula=document.createElement('span'); formula.className='rule-dice-chip'; formula.textContent=(row.value.trim().charAt(0)==='+'?'+':'')+row.formula.toUpperCase(); dline.appendChild(formula);
+    var copy=document.createElement('button'); copy.type='button'; copy.className='rule-dice-copy'; copy.textContent='Copia dado';
+    copy.addEventListener('cli'+'ck',function(){
+      var pseudo={formula:row.formula,contexts:[block.label+' — '+row.raw]};
+      copyTextWithFeedback(buildAutoExtraCode(entry,pseudo),copy,'Copia il dado qui sotto:');
+    });
+    dline.appendChild(copy);
+    if(aff.after){ var post=document.createElement('span'); post.className='rule-dice-affix'; post.textContent=aff.after; dline.appendChild(post); }
+
+    var parts=diceParts(row.formula), key=ruleResultKey(entry,block,row);
+    if(parts){
+      var rw=document.createElement('span'); rw.className='rule-dice-result-wrap';
+      var lab=document.createElement('label'); lab.textContent='Risultato dado'; rw.appendChild(lab);
+      var inp=document.createElement('input'); inp.type='number'; inp.className='rule-dice-result'; inp.min=String(parts.n); inp.max=String(parts.n*parts.faces); inp.step='1'; inp.placeholder=parts.n+'–'+(parts.n*parts.faces);
+      if(state.extraRollResults[key]!==undefined) inp.value=state.extraRollResults[key];
+      rw.appendChild(inp);
+      var paste=document.createElement('button'); paste.type='button'; paste.className='rule-dice-paste'; paste.textContent='Incolla risultato';
+      paste.addEventListener('cli'+'ck',function(){
+        var applyText=function(txt){ var mm=String(txt||'').match(/-?\d+/); if(mm){ inp.value=mm[0]; inp.dispatchEvent(new Event('input',{bubbles:true})); } else { inp.focus(); } };
+        if(navigator.clipboard&&navigator.clipboard.readText){ navigator.clipboard.readText().then(applyText).catch(function(){ inp.focus(); }); } else { inp.focus(); }
+      });
+      rw.appendChild(paste); dline.appendChild(rw);
+      var resolved=document.createElement('span'); resolved.className='rule-dice-resolved'; dline.appendChild(resolved);
+      var update=function(){
+        var v=parseInt(inp.value,10);
+        if(isNaN(v)){ delete state.extraRollResults[key]; resolved.textContent=''; return; }
+        if(v<parts.n||v>parts.n*parts.faces){ resolved.textContent='Risultato non valido'; return; }
+        state.extraRollResults[key]=v;
+        var total=parts.before+v+parts.after;
+        resolved.textContent='→ '+replaceFormulaWithResolved(row.value,row.formula,total);
+        sendHeightSoon();
+      };
+      inp.addEventListener('input',update); inp.addEventListener('change',update); update();
+    }
+    value.appendChild(dline); line.appendChild(value); return line;
+  }
+
+  function makeAudienceRuleBlock(entry,block){
+    var box=document.createElement('div'); box.className='rule-audience-block';
+    if(block.heading){ var h=document.createElement('div'); h.className='rule-group-title'; h.textContent=block.heading; box.appendChild(h); }
+    var a=document.createElement('div'); a.className='rule-audience-title'; a.textContent=block.label; box.appendChild(a);
+    if(block.intro){ var intro=document.createElement('div'); intro.className='rule-audience-intro'; intro.textContent=block.intro; box.appendChild(intro); }
+    var rows=document.createElement('div'); rows.className='rule-outcomes';
+    for(var i=0;i<block.outcomes.length;i++){ rows.appendChild(makeRuleOutcomeRow(entry,block,block.outcomes[i])); }
+    box.appendChild(rows); return box;
+  }
+
+  function renderAutoExtraRolls(entry){
+    var wrap=qs('autoDadiExtraWrap'),list=qs('dadoExtraList'); list.innerHTML='';
+    var blocks=extractAudienceRuleBlocks(entry),rolls=entry&&entry.extraRolls?entry.extraRolls:[];
+    if(!blocks.length&&!rolls.length){ wrap.className='card hidden'; sendHeightSoon(); return; }
+
+    var formulasInAudience={};
+    for(var bi=0;bi<blocks.length;bi++)for(var oi=0;oi<blocks[bi].outcomes.length;oi++)if(blocks[bi].outcomes[oi].formula)formulasInAudience[normalizeDiceFormula(blocks[bi].outcomes[oi].formula)]=true;
+
+    if(blocks.length){
+      if(!state.pg){
+        var p=document.createElement('div'); p.className='rule-context-prompt'; p.innerHTML='<b>Prima indica chi usa la Conoscenza.</b><br>Appena scegli PG Studente o PG Adulto, qui comparirà soltanto la parte delle Specifiche che ti riguarda.'; list.appendChild(p);
+      } else if(state.pg==='adulto'&&entryNeedsAdultSapChoice(entry)&&currentSapienzaMode()===null){
+        var p2=document.createElement('div'); p2.className='rule-context-prompt'; p2.innerHTML='<b>Indica se il PG possiede la Sapienza affine.</b><br>Serve solo per scegliere automaticamente il blocco corretto delle Specifiche.'; list.appendChild(p2);
+      } else {
+        var key=selectedAudienceRuleKey(entry),shown=0;
+        for(var b=0;b<blocks.length;b++){ if(blocks[b].key===key||(key==='adulto'&&blocks[b].key==='adulto')){ list.appendChild(makeAudienceRuleBlock(entry,blocks[b])); shown++; } }
+        if(!shown){
+          var p3=document.createElement('div'); p3.className='rule-context-prompt'; p3.textContent='Per le scelte attuali non risultano effetti aggiuntivi differenziati nelle Specifiche.'; list.appendChild(p3);
+        }
+      }
+    }
+
+    var extraNodes=[];
+    for(var i=0;i<rolls.length;i++){
+      if(formulasInAudience[normalizeDiceFormula(rolls[i].formula)]) continue;
+      var cases=expandRollCases(entry,rolls[i]);
+      for(var j=0;j<cases.length;j++){ extraNodes.push(makeAutoRollItem(entry,cases[j])); }
+    }
+    if(extraNodes.length){
+      var ht=document.createElement('div'); ht.className='rule-unconditional-title'; ht.textContent=blocks.length?'Altri tiri previsti':'Tiri extra previsti dal regolamento'; list.appendChild(ht);
+      for(var x=0;x<extraNodes.length;x++)list.appendChild(extraNodes[x]);
+    }
+
+    wrap.className='card'; sendHeightSoon();
   }
 
   var TAG_LABELS = {
@@ -2207,12 +2436,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }
 
     qs('schedaBox').innerHTML = renderKnowledgeReference(entry);
-    renderAutoExtraRolls(entry);
-    mzBridgeUpdateCard(entry);
-
     qs('nomeConoscenza').value = entry.name;
     state.tipologia = entry.tipologia;
     refreshVisibility();
+    renderAutoExtraRolls(entry);
+    mzBridgeUpdateCard(entry);
     refreshModifierSummary();
     sendHeightSoon();
   }
@@ -2224,7 +2452,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       state.tipologia = null;
       state.lastPct = null;
       qs('schedaCard').className = 'card hidden';
-      qs('autoDadiExtraWrap').className = 'hidden';
+      qs('autoDadiExtraWrap').className = 'card hidden';
       qs('dadoExtraList').innerHTML = '';
       qs('modifiersCard').className = 'card hidden';
       qs('magizoologiaBridgeCard').className = 'card hidden';
@@ -2377,6 +2605,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (state.pg === 'adulto'){
       if (state.tipologia === 'scolastica'){
         qs('adultoScolasticaCard').className = 'card';
+        if (entryNeedsAdultSapChoice(state.selectedEntry)){ qs('adultoExtraCard').className = 'card'; }
       }
       if (state.tipologia === 'extra'){
         qs('adultoExtraCard').className = 'card';
