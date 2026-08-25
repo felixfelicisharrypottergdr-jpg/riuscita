@@ -754,7 +754,7 @@
     <p class="note">Se la Conoscenza è contrassegnata da un Asterisco (*), questo vale solo per l'evocazione: l'esito, quando va a impattare su un altro PG, un PNG o un elemento dell'ambientazione, resta comunque da stabilire con il Narratore.</p>
   </div>
 
-  <div class="card hidden" id="pgCard">
+  <div class="card" id="pgCard">
     <p class="step-label"><span class="num">1</span>Chi evoca la Conoscenza</p>
     <div class="btn-grid" id="pgGrid">
       <div class="choice" data-value="studente">PG Studente</div>
@@ -800,7 +800,7 @@
     </select>
   </div>
 
-  <div class="card hidden" id="detailsCard">
+  <div class="card" id="detailsCard">
     <p class="step-label"><span class="num">3</span>Dettagli del tiro</p>
     <label class="field-label" for="nomePg">Nome del PG (facoltativo)</label>
     <input type="text" id="nomePg" placeholder="Es. Harry Potter">
@@ -837,7 +837,7 @@
     <button class="roll-btn" id="calcBtn" type="button">Calcola risultato</button>
   </div>
 
-  <div class="card hidden" id="resultCard">
+  <div class="card" id="resultCard">
     <div class="empty-result" id="emptyResult">Completa le scelte sopra, posta il codice sul forum e incolla il risultato per scoprire la riuscita.</div>
     <div class="result hidden" id="resultBody">
       <div class="die-row">
@@ -1305,29 +1305,29 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     qs('adultoExtraCard').className = 'card hidden';
     qs('adultoAvanzataCard').className = 'card hidden';
     qs('autoconclusivaCard').className = 'card hidden';
-    qs('pgCard').className = 'card hidden';
-    qs('detailsCard').className = 'card hidden';
-    qs('resultCard').className = 'card hidden';
+
+    /* Restano sempre visibili i passaggi generali, come nella versione
+       precedente: la sola scelta eliminata è la Tipologia manuale. */
+    qs('pgCard').className = 'card';
+    qs('detailsCard').className = 'card';
+    qs('resultCard').className = 'card';
     qs('bonusRowField').className = '';
 
-    /* Nessuna scelta manuale della Tipologia: il flusso parte solo da una
-       Conoscenza valida selezionata nel database. */
+    /* Finché non viene scelta una Conoscenza, il PG e i dettagli possono
+       comunque essere compilati; le sezioni specifiche dipendenti dalla
+       Tipologia restano semplicemente nascoste. */
     if (!state.selectedEntry || !state.tipologia){
       refreshTabella();
       return;
     }
 
-    qs('detailsCard').className = 'card';
-    qs('resultCard').className = 'card';
-
     if (state.tipologia === 'autoconclusiva'){
       qs('autoconclusivaCard').className = 'card';
+      qs('pgCard').className = 'card hidden';
       qs('bonusRowField').className = 'hidden';
       refreshTabella();
       return;
     }
-
-    qs('pgCard').className = 'card';
 
     if (state.pg === 'studente'){
       qs('studenteCard').className = 'card';
