@@ -2059,7 +2059,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     sendHeightSoon();
   });
 
-  /* ===== ALTEZZA IFRAME — misura solo il contenuto reale, non il viewport ===== */
+  /* ===== ALTEZZA IFRAME — stabile, senza feedback dal resize del parent ===== */
   var lastSentHeight = 0;
   var heightSeq = 0;
 
@@ -2070,20 +2070,21 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
     var bodyStyle = window.getComputedStyle(body);
     var paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
-    var rect = wrap.getBoundingClientRect();
 
     /*
-      NON usare body.scrollHeight / documentElement.scrollHeight qui:
-      dentro un iframe possono coincidere con l'altezza del viewport e
-      creare un ciclo infinito iframe -> resize -> altezza maggiore.
+      offsetTop + offsetHeight dipendono solo dal contenuto reale del tool.
+      Non leggiamo scrollHeight, viewport o getBoundingClientRect: così
+      l'altezza dell'iframe impostata dal parent non può rientrare nel calcolo.
     */
-    return Math.ceil(rect.bottom + window.pageYOffset + paddingBottom + 2);
+    return Math.ceil((wrap.offsetTop || 0) + (wrap.offsetHeight || 0) + paddingBottom + 4);
   }
 
-  function sendHeight(){
+  function sendHeight(force){
     if (window.parent === window){ return; }
     var height = getRealDocumentHeight();
-    if (height > 0 && Math.abs(height - lastSentHeight) > 1){
+    if (height <= 0){ return; }
+
+    if (force || Math.abs(height - lastSentHeight) > 2){
       lastSentHeight = height;
       heightSeq += 1;
       window.parent.postMessage({
@@ -2094,30 +2095,32 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }
   }
 
-  var heightTimers = [];
+  var heightTimer = null;
   function sendHeightSoon(){
-    while (heightTimers.length){ clearTimeout(heightTimers.pop()); }
-    sendHeight();
-    heightTimers.push(setTimeout(sendHeight, 60));
-    heightTimers.push(setTimeout(sendHeight, 220));
-    heightTimers.push(setTimeout(sendHeight, 500));
+    if (heightTimer){ clearTimeout(heightTimer); }
+    heightTimer = setTimeout(function(){
+      heightTimer = null;
+      sendHeight(false);
+    }, 40);
   }
 
-  window.addEventListener('load', sendHeightSoon);
-  window.addEventListener('resize', sendHeightSoon);
+  window.addEventListener('load', function(){
+    sendHeight(true);
+    setTimeout(function(){ sendHeight(true); }, 150);
+    setTimeout(function(){ sendHeight(true); }, 500);
+  });
   document.addEventListener('toggle', sendHeightSoon, true);
 
   var observedRoot = document.querySelector('.wrap');
   if (window.ResizeObserver && observedRoot){
-    var resizeObserver = new ResizeObserver(sendHeightSoon);
+    var resizeObserver = new ResizeObserver(function(){
+      sendHeightSoon();
+    });
     resizeObserver.observe(observedRoot);
   }
-  if (window.MutationObserver && observedRoot){
-    var mutationObserver = new MutationObserver(sendHeightSoon);
-    mutationObserver.observe(observedRoot, {childList:true, subtree:true, attributes:true, characterData:true});
-  }
+
   if (document.fonts && document.fonts.ready){
-    document.fonts.ready.then(sendHeightSoon);
+    document.fonts.ready.then(function(){ sendHeight(true); });
   }
 
   refreshVisibility();
