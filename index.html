@@ -1005,9 +1005,37 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   var searchActiveIndex = -1;
   var searchVisibleEntries = [];
 
+  function normalizeSearchText(value){
+    var text = String(value == null ? '' : value).toLowerCase();
+    try { text = text.normalize('NFD').replace(/[\u0300-\u036f]/g,''); } catch(e){}
+    return text.replace(/[✔+*]/g,'').replace(/\s+/g,' ').trim();
+  }
+
+  function searchEntryScore(entry, query){
+    var name = normalizeSearchText(entry.name);
+    var source = normalizeSearchText(entry.source || '');
+    if (!query){ return 999; }
+
+    /* Prima vengono le voci che iniziano esattamente con quanto digitato:
+       scrivendo "d" si salta quindi subito alla sezione alfabetica D. */
+    if (name.indexOf(query) === 0){ return 0; }
+
+    /* Poi le parole interne che iniziano con la ricerca, utile ad esempio
+       per cercare "maxima" senza ricordare la prima parola del nome. */
+    var words = name.split(' ');
+    for (var i=0;i<words.length;i++){
+      if (words[i].indexOf(query) === 0){ return 1; }
+    }
+
+    /* Infine manteniamo la ricerca libera nel nome e nella fonte. */
+    if (name.indexOf(query) !== -1){ return 2; }
+    if (source.indexOf(query) !== -1){ return 3; }
+    return 999;
+  }
+
   function renderSearchSuggestions(){
     var box = qs('searchSuggestions');
-    var query = qs('searchInput').value.toLowerCase().trim();
+    var query = normalizeSearchText(qs('searchInput').value);
     searchVisibleEntries = [];
     searchActiveIndex = -1;
     if (!query){
@@ -1015,14 +1043,29 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       box.innerHTML = '';
       return;
     }
+
+    var matches = [];
     for (var i=0;i<CONOSCENZE_DB.length;i++){
       var entry = CONOSCENZE_DB[i];
-      var hay = (entry.name + ' ' + (entry.source || '')).toLowerCase();
-      if (hay.indexOf(query) !== -1){
-        searchVisibleEntries.push(entry);
-        if (searchVisibleEntries.length >= 45){ break; }
+      var score = searchEntryScore(entry, query);
+      if (score < 999){
+        matches.push({entry:entry, score:score, order:i});
       }
     }
+
+    matches.sort(function(a,b){
+      if (a.score !== b.score){ return a.score - b.score; }
+      var an = normalizeSearchText(a.entry.name);
+      var bn = normalizeSearchText(b.entry.name);
+      if (an < bn){ return -1; }
+      if (an > bn){ return 1; }
+      return a.order - b.order;
+    });
+
+    for (var m=0;m<matches.length && m<45;m++){
+      searchVisibleEntries.push(matches[m].entry);
+    }
+
     if (!searchVisibleEntries.length){
       box.innerHTML = '<div class="search-empty">Nessuna Conoscenza trovata.</div>';
       box.className = 'search-suggestions';
