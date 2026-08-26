@@ -4,7 +4,7 @@
 
 
 <!DOCTYPE html>
-<!-- v28: percentuale Salute + Sintomi Medimagici + ponte di importazione verso San Mungo -->
+<!-- v30: riepilogo medimagico sempre visibile per Incantesimi che causano perdita di Salute -->
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -948,6 +948,24 @@
   #erbologiaBridgeCard .step-label{margin-bottom:10px}.erb-r-bridge-box{padding:12px 14px;border:1px solid #8eaa70;border-left:4px solid #668c48;border-radius:7px;background:rgba(145,177,104,.14);color:#3f3424;line-height:1.48}.erb-r-bridge-box strong{color:var(--maroon-deep)}.erb-r-bridge-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center}.erb-r-bridge-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #536e3b;border-radius:6px;background:#668c48;color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:13px}.erb-r-bridge-link:hover{filter:brightness(1.08)}.erb-r-bridge-status{margin-top:9px;font-size:13px;color:#5f4b31}.erb-r-bridge-status.ok{font-weight:700;color:#39662c}.erb-r-bridge-status.warn{font-weight:700;color:#892c0f}@media(max-width:640px){.erb-r-bridge-link{width:100%}}
 
 
+  /* ===== v30: richiamo Salute totale per Incantesimi dannosi ===== */
+  .medical-needed-prompt{
+    margin-top:12px;
+    padding:12px 14px;
+    border:1px solid #c48c39;
+    border-left:4px solid #8a2f1e;
+    border-radius:10px;
+    background:#fff7df;
+    color:#6b2a18;
+    line-height:1.45;
+  }
+  .medical-needed-prompt strong{color:#6b1f10}
+  #forceTargetHealth.medical-needed{
+    border-color:#8a2f1e!important;
+    box-shadow:0 0 0 2px rgba(138,47,30,.10);
+    background:#fffdf7;
+  }
+
   /* ===== v27: Salute persa e Sintomi Medimagici ===== */
   .medical-result{margin-top:12px;padding:12px 13px;border:1px solid rgba(137,44,15,.35);border-radius:8px;background:rgba(242,230,201,.48);}
   .medical-result-title{font-family:'Cinzel',serif;font-weight:700;color:var(--maroon-deep);margin-bottom:6px;}
@@ -1465,11 +1483,11 @@
           <input type="number" id="forceTargetResistance" min="0.1" step="0.5" inputmode="decimal" placeholder="Solo se vuoi calcolare danni/malus">
         </div>
         <div class="force-field">
-          <label for="forceTargetHealth">Salute totale del bersaglio <span class="force-status-tag">per % e Sintomi</span></label>
+          <label for="forceTargetHealth">Salute totale del bersaglio <span class="force-status-tag">necessaria per % e Sintomi</span></label>
           <input type="number" id="forceTargetHealth" min="1" step="1" inputmode="numeric" placeholder="Es. 75 Punti Salute">
         </div>
       </div>
-      <p class="note">Inserisci solo numeri e usa i valori già comprensivi di eventuali bonus/malus del PG. La Fatica attuale viene rapportata alla Fatica totale; sotto il 10% il moltiplicatore resta comunque 0,1. La Resistenza serve soltanto per il calcolo quantitativo degli effetti sul bersaglio. Se inserisci anche la Salute totale, il tool calcola la percentuale di Salute persa e, per gli Incantesimi presenti nell’Enciclopedia Medimagica, i Sintomi da curare. Quando i Sintomi sono determinabili compare anche il collegamento per trasferirli al tool del San Mungo come dati OFFGame.</p>
+      <p class="note">Inserisci solo numeri e usa i valori già comprensivi di eventuali bonus/malus del PG. La Fatica attuale viene rapportata alla Fatica totale; sotto il 10% il moltiplicatore resta comunque 0,1. La Resistenza serve per calcolare il danno/malus sul bersaglio. <strong>Se l’Incantesimo toglie Salute, inserisci anche la Salute totale del bersaglio:</strong> nello stesso risultato compariranno automaticamente Punti Salute persi, percentuale di Salute persa, fascia medimagica e Sintomi associati a quell’Incantesimo. Quando i Sintomi sono determinabili compare anche il collegamento per trasferirli al tool del San Mungo come dati OFFGame.</p>
       <div class="force-result-panel" id="forceResultPanel">
         <p class="force-result-empty" id="forceResultEmpty">Completa i valori del PG e seleziona la fascia di riuscita.</p>
         <div class="hidden" id="forceResultBody">
@@ -3337,11 +3355,28 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return out;
   }
 
+  function getKnowledgeTypeLabel(){
+    if(!state.selectedEntry){ return ''; }
+    var html=String(state.selectedEntry.html||'');
+    var m=html.match(/<tr[^>]*class=["'][^"']*valori[^"']*["'][^>]*>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/i);
+    return m ? forceStripHtml(m[1]) : '';
+  }
+
   function combatSignForKnowledge(paramName){
     var text=cleanText(forceStripHtml(state.selectedEntry&&state.selectedEntry.html||'')).toLowerCase();
+    var type=getKnowledgeTypeLabel().toLowerCase();
     var p=String(paramName||'').toLowerCase();
-    if(/ripristina|recupera|guarisce|cura/.test(text) && p.indexOf('salute')>=0){ return '+'; }
-    if(/ottiene un bonus|conferisce un bonus|aumenta/.test(text) && !/subisce un malus|causa.*malus|riduce/.test(text)){ return '+'; }
+
+    /* Prima di cercare parole come “cura”, riconosci le Conoscenze esplicitamente
+       offensive/dannose. Evita falsi positivi come “procurandogli ferite” (Ad Caelum). */
+    if(/offensiv|oscuro|maledizion|fattura|veleno|dann/.test(type)){ return '-'; }
+
+    if(p.indexOf('salute')>=0 && /\b(?:ripristina|ripristinare|recupera|recuperare|guarisce|guarire|cura|curare|curativo|curativa)\b/.test(text)){
+      return '+';
+    }
+    if(/\b(?:ottiene|conferisce|riceve|d[aà])\s+(?:un\s+)?bonus\b|\baumenta(?:no)?\b|\bincrementa(?:no)?\b/.test(text) && !/\b(?:subisce|causa|infligge|procura)\b[^.]{0,80}\bmalus\b|\briduce\b/.test(text)){
+      return '+';
+    }
     return '-';
   }
 
@@ -3631,13 +3666,22 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       var med={html:'',copy:''};
       var hasHealth=targetInfo.params && targetInfo.params.some(function(p){return /\bsalute\b/i.test(p);});
       var sourceText=String(state.selectedEntry&&state.selectedEntry.source||'').toLowerCase();
-      if(hasHealth && combatSignForKnowledge('Salute')==='-' && targetHealthTotal!==null && targetHealthTotal>0 && sourceText.indexOf('incantesimo')!==-1){
-        med=medBuildResult('incantesimo',state.selectedEntry.name,health,targetHealthTotal);
+      var isDamagingSpell=hasHealth && combatSignForKnowledge('Salute')==='-' && sourceText.indexOf('incantesimo')!==-1;
+      var healthInput=qs('forceTargetHealth');
+      if(healthInput){healthInput.classList.remove('medical-needed');}
+      if(isDamagingSpell){
+        if(targetHealthTotal!==null && targetHealthTotal>0){
+          med=medBuildResult('incantesimo',state.selectedEntry.name,health,targetHealthTotal);
+        }else{
+          if(healthInput){healthInput.classList.add('medical-needed');}
+          med.html='<div class="medical-needed-prompt"><strong>Per completare le conseguenze del colpo:</strong> questo Incantesimo causa <strong>-'+escapeHtml(forceFmt(health,0))+' Punti Salute</strong>. Inserisci la <strong>Salute totale del bersaglio</strong> nel campo sopra e il tool mostrerà subito la <strong>% di Salute persa</strong>, la relativa <strong>fascia medimagica</strong> e i <strong>Sintomi associati a '+escapeHtml(state.selectedEntry.name)+'</strong>.</div>';
+        }
       }
       dmgBox.dataset.copyText=effect.copy+(med.copy?' · '+med.copy:'');
       dmgBox.innerHTML=title+effect.html+med.html;
     }else{
       dmgBox.className='force-damage-box hidden'; dmgBox.innerHTML=''; delete dmgBox.dataset.copyText;
+      var healthInputReset=qs('forceTargetHealth'); if(healthInputReset){healthInputReset.classList.remove('medical-needed');}
     }
     sendHeightSoon();
   }
