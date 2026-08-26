@@ -4,6 +4,7 @@
 
 
 <!DOCTYPE html>
+<!-- v38: Riuscita e Forza separate in due moduli collegati ma utilizzabili indipendentemente -->
 <!-- v31: riepilogo medimagico sempre visibile per Incantesimi che causano perdita di Salute -->
 <html lang="it">
 <head>
@@ -1362,6 +1363,82 @@
   }
 </style>
 
+
+<style id="v38-two-modules">
+  .tool-module{
+    margin:0 0 18px;
+    border:1.5px solid var(--line);
+    border-radius:11px;
+    background:rgba(255,251,238,.32);
+    overflow:visible;
+  }
+  .tool-module > summary{
+    list-style:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:15px 17px;
+    background:linear-gradient(180deg,rgba(243,229,196,.92),rgba(242,230,201,.72));
+    color:var(--maroon-deep);
+    font-family:'magic',Georgia,'Times New Roman',serif;
+    font-size:22px;
+    border-radius:10px;
+    user-select:none;
+  }
+  .tool-module > summary::-webkit-details-marker{display:none;}
+  .tool-module > summary::after{
+    content:'▾';
+    margin-left:auto;
+    font-family:Georgia,'Times New Roman',serif;
+    font-size:16px;
+    color:var(--sage);
+    transition:transform .16s ease;
+  }
+  .tool-module:not([open]) > summary::after{transform:rotate(-90deg);}
+  .tool-module[open] > summary{border-radius:10px 10px 0 0;border-bottom:1px solid var(--line);}
+  .tool-module-num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:var(--maroon);
+    color:#fff8e8;
+    font-family:Georgia,'Times New Roman',serif;
+    font-size:14px;
+    font-weight:700;
+    flex:0 0 auto;
+  }
+  .tool-module-body{padding:16px;}
+  .tool-module-body > .card:first-child{margin-top:0;}
+  .force-independent-card{border-left:4px solid var(--gold);}
+  .force-independent-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.42fr);gap:12px;align-items:end;margin-top:12px;}
+  .force-independent-head .field-label{margin-top:0;}
+  .force-selected-card{margin-top:12px;padding:0;border:0;background:transparent;}
+  .force-selected-card.hidden{display:none!important;}
+  .continue-force-wrap{margin-top:14px;display:flex;justify-content:flex-end;}
+  .continue-force-wrap.hidden{display:none!important;}
+  .continue-force-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:10px 15px;border:1px solid var(--maroon);border-radius:7px;
+    background:var(--maroon);color:#fff8e8;font-family:Georgia,'Times New Roman',serif;
+    font-size:14px;font-weight:700;cursor:pointer;
+  }
+  .continue-force-btn:hover{filter:brightness(1.06);}
+  .force-context-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px;}
+  .force-context-grid .force-field{margin:0;}
+  .force-context-help{margin:-2px 0 14px;font-size:13px;color:#6b5638;}
+  @media(max-width:700px){
+    .tool-module-body{padding:12px;}
+    .tool-module > summary{font-size:19px;padding:13px 14px;}
+    .force-independent-head,.force-context-grid{grid-template-columns:1fr;}
+    .continue-force-wrap{justify-content:stretch;}
+    .continue-force-btn{width:100%;}
+  }
+</style>
+
 </head>
 <body>
 <div class="wrap">
@@ -1379,6 +1456,10 @@
     <a class="guide-return-link" id="guideReturnLink" href="#" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i><span id="guideReturnLabel">Apri la Guida</span></a>
   </div>
 
+
+  <details class="tool-module" id="successModule" open>
+    <summary><span class="tool-module-num">1</span><span>Riuscita della Conoscenza</span></summary>
+    <div class="tool-module-body">
 
   <div class="card">
     <p class="step-label"><span class="num">0</span>Cerca una Conoscenza</p>
@@ -1495,12 +1576,56 @@
       <p class="note auto-extra-note">Qui compare soltanto ciò che ottieni con la percentuale selezionata e con il tipo di PG indicato. Se è previsto un dado secondario, puoi gestirlo direttamente qui.</p>
       <div class="dado-extra-list" id="dadoExtraList"></div>
     </div>
+
+    <div class="continue-force-wrap hidden" id="continueForceWrap">
+      <button type="button" class="continue-force-btn" id="continueForceBtn">Calcola Forza e conseguenze di questa Conoscenza <span aria-hidden="true">→</span></button>
+    </div>
   </div>
 
+    </div>
+  </details>
+
+  <details class="tool-module" id="forceModule">
+    <summary><span class="tool-module-num">2</span><span>Forza e conseguenze</span></summary>
+    <div class="tool-module-body">
+
+      <div class="card force-independent-card" id="forceIndependentCard">
+        <p class="step-label"><span class="num"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>Conoscenza da calcolare</p>
+        <p class="note">Puoi usare questa sezione anche senza passare dalla Riuscita: seleziona qui la Conoscenza e indica la riuscita che conosci già.</p>
+        <div class="search-wrap">
+          <input type="text" id="forceSearchInput" autocomplete="off" aria-autocomplete="list" aria-controls="forceSearchSuggestions" placeholder="Digita il nome di un Incantesimo o di una Tecnica...">
+          <div id="forceSearchSuggestions" class="search-suggestions hidden" role="listbox" aria-label="Suggerimenti Conoscenze per la Forza"></div>
+        </div>
+        <div class="force-selected-card hidden" id="forceKnowledgeCard">
+          <div id="forceSchedaBox"></div>
+        </div>
+      </div>
 
   <div class="card hidden" id="forceCard">
     <p class="step-label"><span class="num"><i class="fa-solid fa-bolt" aria-hidden="true"></i></span>Forza effettiva</p>
     <p class="note" id="forceIntro">La Forza base e il Parametro affine vengono letti automaticamente dalla Conoscenza selezionata. Inserisci soltanto i valori del PG che possono modificarne l'effetto.</p>
+
+    <div class="force-context-grid">
+      <div class="force-field">
+        <label for="forcePgSelect">Tipo di PG</label>
+        <select id="forcePgSelect">
+          <option value="">Seleziona...</option>
+          <option value="studente">PG Studente</option>
+          <option value="adulto">PG Adulto</option>
+        </select>
+      </div>
+      <div class="force-field">
+        <label for="forceKnownPct">Riuscita già ottenuta</label>
+        <select id="forceKnownPct">
+          <option value="">Seleziona...</option>
+          <option value="0">0%</option>
+          <option value="33">33%</option>
+          <option value="66">66%</option>
+          <option value="100">100%</option>
+        </select>
+      </div>
+    </div>
+    <p class="force-context-help">Se arrivi dalla sezione Riuscita, questi dati vengono riportati qui automaticamente. Puoi comunque modificarli direttamente.</p>
 
     <div class="force-meta-grid" id="forceMetaGrid">
       <div class="force-meta-box"><span class="force-meta-label">Parametro affine</span><span class="force-meta-value" id="forceMetaParameter">—</span></div>
@@ -1642,6 +1767,9 @@
     <datalist id="medPotionList"></datalist>
     <datalist id="medPlantList"></datalist>
   </div>
+
+    </div>
+  </details>
 
   <!-- v20: il risultato effettivo resta sul forum; questi nodi sono mantenuti solo per compatibilità interna e non vengono mostrati. -->
   <div class="card hidden" id="pasteCard" aria-hidden="true">
@@ -3155,6 +3283,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       '<span class="scheda-tag family-tag ' + escapeHtml(family.css) + '">' + escapeHtml(family.label) + '</span>' +
       '<span class="scheda-tag tipologia-tag">' + escapeHtml(TAG_LABELS[entry.tipologia]) + '</span>';
 
+    syncForceKnowledgeUI(entry);
+
     if (entry.tipologia === 'special'){
       qs('schedaBox').innerHTML = renderKnowledgeReference(entry);
       qs('nomeConoscenza').value = entry.name;
@@ -3194,6 +3324,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       qs('dadoExtraList').innerHTML = '';
       qs('modifiersCard').className = 'card hidden';
       qs('forceCard').className = 'card hidden';
+      syncForceKnowledgeUI(null);
+      refreshForceContextControls();
+      refreshContinueForce();
       qs('magizoologiaBridgeCard').className = 'card hidden';
       qs('magizoologiaBridgeBody').innerHTML = '';
       qs('erbologiaBridgeCard').className = 'card hidden';
@@ -3240,6 +3373,113 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       hideSearchSuggestions();
     }
   });
+
+  /* ===== v38 — seconda ricerca, direttamente nella sezione Forza ===== */
+  var forceSearchActiveIndex=-1;
+  var forceSearchVisibleEntries=[];
+
+  function renderForceSearchSuggestions(){
+    var box=qs('forceSearchSuggestions'), input=qs('forceSearchInput');
+    if(!box || !input)return;
+    var query=normalizeSearchText(input.value);
+    forceSearchVisibleEntries=[]; forceSearchActiveIndex=-1;
+    if(!query){box.className='search-suggestions hidden';box.innerHTML='';return;}
+    var matches=[];
+    for(var i=0;i<CONOSCENZE_DB.length;i++){
+      var entry=CONOSCENZE_DB[i], score=searchEntryScore(entry,query);
+      if(score<999)matches.push({entry:entry,score:score,order:i});
+    }
+    matches.sort(function(a,b){
+      if(a.score!==b.score)return a.score-b.score;
+      var an=normalizeSearchText(a.entry.name),bn=normalizeSearchText(b.entry.name);
+      if(an<bn)return -1;if(an>bn)return 1;return a.order-b.order;
+    });
+    for(var m=0;m<matches.length&&m<45;m++)forceSearchVisibleEntries.push(matches[m].entry);
+    if(!forceSearchVisibleEntries.length){box.innerHTML='<div class="search-empty">Nessuna Conoscenza trovata.</div>';box.className='search-suggestions';return;}
+    var html='';
+    for(var j=0;j<forceSearchVisibleEntries.length;j++){
+      var e=forceSearchVisibleEntries[j], extra=e.tipologia==='avanzata'?' avanzata':'';
+      html+='<div class="search-suggestion'+extra+'" role="option" data-force-search-index="'+j+'"><span class="suggestion-name">'+escapeHtml(e.name)+'</span><span class="suggestion-source">'+escapeHtml(e.source||'')+'</span></div>';
+    }
+    box.innerHTML=html;box.className='search-suggestions';
+  }
+
+  function hideForceSearchSuggestions(){var box=qs('forceSearchSuggestions');if(box){box.className='search-suggestions hidden';}forceSearchActiveIndex=-1;}
+  function setForceSearchActive(index){
+    var box=qs('forceSearchSuggestions');if(!box)return;
+    var items=box.querySelectorAll('.search-suggestion');if(!items.length)return;
+    if(index<0)index=items.length-1;if(index>=items.length)index=0;forceSearchActiveIndex=index;
+    for(var i=0;i<items.length;i++){items[i].classList.toggle('active',i===index);items[i].setAttribute('aria-selected',i===index?'true':'false');}
+    if(items[index]&&items[index].scrollIntoView)items[index].scrollIntoView({block:'nearest'});
+  }
+
+  function syncForceKnowledgeUI(entry){
+    var input=qs('forceSearchInput'),card=qs('forceKnowledgeCard'),box=qs('forceSchedaBox');
+    if(!entry){if(card)card.className='force-selected-card hidden';if(box)box.innerHTML='';return;}
+    if(input && document.activeElement!==input)input.value=entry.name;
+    if(box)box.innerHTML=renderKnowledgeReference(entry);
+    if(card)card.className='force-selected-card';
+  }
+
+  function refreshForceContextControls(){
+    var pg=qs('forcePgSelect'), pctSel=qs('forceKnownPct');
+    if(pg && document.activeElement!==pg)pg.value=state.pg||'';
+    if(pctSel){
+      if(state.tipologia==='autoconclusiva'){
+        pctSel.value='100';pctSel.disabled=true;
+      }else{
+        pctSel.disabled=false;
+        if(document.activeElement!==pctSel)pctSel.value=(state.lastPct===null||typeof state.lastPct==='undefined')?'':String(state.lastPct);
+      }
+    }
+  }
+
+  function refreshContinueForce(){
+    var wrap=qs('continueForceWrap');if(!wrap)return;
+    var pct=forceSuccessPct();
+    wrap.classList.toggle('hidden',!(state.selectedEntry && pct!==null));
+  }
+
+  function chooseForceKnowledge(entry){
+    if(!entry)return;
+    selectConoscenza(entry);
+    syncForceKnowledgeUI(entry);
+    var fm=qs('forceModule');if(fm)fm.open=true;
+    hideForceSearchSuggestions();
+    refreshForceContextControls();
+    refreshForceCard();
+    sendHeightSoon();
+  }
+
+  (function bindForceIndependentSearch(){
+    var input=qs('forceSearchInput'), box=qs('forceSearchSuggestions');
+    if(!input||!box)return;
+    input.addEventListener('input',renderForceSearchSuggestions);
+    input.addEventListener('focus',renderForceSearchSuggestions);
+    input.addEventListener('keydown',function(ev){
+      if(ev.key==='ArrowDown'){ev.preventDefault();if(box.classList.contains('hidden'))renderForceSearchSuggestions();setForceSearchActive(forceSearchActiveIndex+1);}
+      else if(ev.key==='ArrowUp'){ev.preventDefault();setForceSearchActive(forceSearchActiveIndex-1);}
+      else if(ev.key==='Enter'){
+        if(forceSearchActiveIndex>=0&&forceSearchVisibleEntries[forceSearchActiveIndex]){ev.preventDefault();chooseForceKnowledge(forceSearchVisibleEntries[forceSearchActiveIndex]);}
+        else{var exact=findConoscenza(input.value);if(exact){ev.preventDefault();chooseForceKnowledge(exact);}}
+      }else if(ev.key==='Escape'){hideForceSearchSuggestions();}
+    });
+    box.addEventListener('mousedown',function(ev){var item=ev.target.closest('.search-suggestion');if(!item)return;ev.preventDefault();var idx=parseInt(item.getAttribute('data-force-search-index'),10);if(!isNaN(idx)&&forceSearchVisibleEntries[idx])chooseForceKnowledge(forceSearchVisibleEntries[idx]);});
+    document.addEventListener('mousedown',function(ev){if(!input.contains(ev.target)&&!box.contains(ev.target))hideForceSearchSuggestions();});
+  })();
+
+  var forcePgSelect=qs('forcePgSelect');
+  if(forcePgSelect){forcePgSelect.addEventListener('change',function(){state.pg=this.value||null;if(state.pg)setActive('pgGrid',state.pg);refreshVisibility();refreshForceCard();refreshModifierSummary();sendHeightSoon();});}
+  var forceKnownPct=qs('forceKnownPct');
+  if(forceKnownPct){forceKnownPct.addEventListener('change',function(){var v=this.value;state.lastPct=(v==='')?null:Number(v);if(state.selectedEntry)renderAutoExtraRolls(state.selectedEntry);refreshForceCard();refreshModifierSummary();sendHeightSoon();});}
+  var continueForceBtn=qs('continueForceBtn');
+  if(continueForceBtn){continueForceBtn.addEventListener('click',function(){
+    if(!state.selectedEntry)return;
+    syncForceKnowledgeUI(state.selectedEntry);refreshForceContextControls();
+    var success=qs('successModule'),force=qs('forceModule');if(success)success.open=false;if(force)force.open=true;
+    refreshForceCard();sendHeightSoon();
+    setTimeout(function(){if(force&&force.scrollIntoView)force.scrollIntoView({behavior:'smooth',block:'start'});},30);
+  });}
 
   function setActive(gridId, value){
     var grid = qs(gridId);
@@ -3808,7 +4048,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   function forceMaxTargetsForCurrentContext(entry,pct){
-    if(!entry || pct===null || pct===undefined || Number(pct)<=0)return 1;
+    if(!entry || !state.pg || pct===null || pct===undefined || Number(pct)<=0)return 1;
     var lines=entryTextLines(entry);
     var wanted=state.pg==='studente'?'studente':(forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza');
     var best=1, audience='';
@@ -3992,6 +4232,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   function refreshForceCard(){
     var card=qs('forceCard'); if(!card){ return; }
+    syncForceKnowledgeUI(state.selectedEntry);
+    refreshForceContextControls();
+    refreshContinueForce();
     if(!state.selectedEntry){ card.className='card hidden'; return; }
 
     var meta=getKnowledgeForceMeta();
@@ -4054,6 +4297,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var empty=qs('forceResultEmpty'), body=qs('forceResultBody');
 
     var missing=[];
+    if(!state.pg){ missing.push('Tipo PG'); }
     if(base===null || base<0){ missing.push('Forza base'); }
     if(param===null || param<0){ missing.push(meta.parameter&&meta.parameter!=='//'?meta.parameter:'Parametro affine'); }
     if(fatMax===null || fatMax<=0){ missing.push('Fatica totale'); }
