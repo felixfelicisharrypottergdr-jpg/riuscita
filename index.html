@@ -759,8 +759,14 @@
   #autoDadiExtraWrap .auto-extra-title{margin:0 0 4px;font-size:17px;}
   #autoDadiExtraWrap .auto-extra-note{margin:0 0 9px;font-size:13px;}
   #autoDadiExtraWrap .dado-extra-list{margin-top:0;display:grid;gap:7px;}
-  .auto-roll-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 9px;border:1px solid var(--line);border-radius:6px;background:#fffaf0;}
+  .auto-roll-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--line);border-radius:6px;background:#fffaf0;transition:opacity .15s,box-shadow .15s,border-color .15s;}
+  .auto-roll-item.auto-roll-current{border:2px solid var(--high);box-shadow:0 0 0 3px rgba(57,102,44,.10);background:#fbfff7;}
+  .auto-roll-item.auto-roll-not-current{opacity:.58;}
   .auto-roll-formula{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:5px 8px;border-radius:16px;background:var(--maroon);color:var(--parchment);font-family:Consolas,"Courier New",monospace;font-size:12px;font-weight:700;white-space:nowrap;}
+  .auto-roll-use{display:block;margin:4px 0 2px;padding:6px 8px;border-radius:5px;background:rgba(137,44,15,.07);color:#3f2b19;font-size:12px;line-height:1.4;}
+  .auto-roll-use strong{color:var(--maroon-deep);}
+  .auto-roll-current-badge{display:inline-block;margin:0 0 5px;padding:3px 8px;border-radius:999px;background:var(--high);color:#fff;font-family:Georgia,"Times New Roman",serif;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;}
+  .auto-roll-skip-badge{display:inline-block;margin:0 0 5px;padding:3px 8px;border-radius:999px;background:#8a765a;color:#fffaf0;font-size:10.5px;}
   .auto-roll-info{min-width:0;color:#4a351f;font-size:12.5px;line-height:1.35;}
   .auto-roll-info .auto-roll-main-context{display:block;overflow-wrap:anywhere;}
   .auto-roll-semantic-label{display:block;color:var(--maroon-deep);font-size:13px;line-height:1.3;margin-bottom:3px;}
@@ -775,22 +781,152 @@
   .auto-roll-copy:hover{background:var(--maroon);color:var(--parchment);}
   @media(max-width:640px){.auto-roll-item{grid-template-columns:auto minmax(0,1fr);}.auto-roll-copy{grid-column:1 / -1;width:100%;}}
 
+  /* ===== v21 — Specifiche contestuali: mostra solo il blocco del PG scelto ===== */
+  #autoDadiExtraWrap{padding:14px 18px;}
+  #autoDadiExtraWrap .dado-extra-list{display:grid;gap:10px;}
+  .rule-audience-block{border:1px solid var(--line);border-radius:7px;background:#fffaf0;overflow:hidden;}
+  .rule-group-title{padding:8px 12px;background:rgba(201,162,39,.12);border-bottom:1px solid rgba(184,154,90,.55);font-family:'magic',Georgia,"Times New Roman",serif;font-size:18px;color:var(--maroon-deep);}
+  .rule-audience-title{padding:10px 12px 4px;font-weight:700;font-style:italic;color:var(--maroon-deep);font-size:14px;}
+  .rule-audience-intro{padding:0 12px 9px;color:#60492f;font-size:13px;line-height:1.4;}
+  .rule-outcomes{border-top:1px dashed rgba(184,154,90,.62);}
+  .rule-outcome-row{display:grid;grid-template-columns:74px minmax(0,1fr);gap:8px;align-items:center;padding:9px 12px;border-top:1px solid rgba(184,154,90,.28);}
+  .rule-outcome-row:first-child{border-top:0;}
+  .rule-outcome-pct{font-family:Georgia,"Times New Roman",serif;font-weight:700;color:var(--maroon);white-space:nowrap;}
+  .rule-outcome-value{min-width:0;color:#3c2a19;line-height:1.4;}
+  .rule-dice-line{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .rule-dice-chip{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:16px;background:var(--maroon);color:#fff8e8;font-family:Consolas,"Courier New",monospace;font-size:12px;font-weight:700;white-space:nowrap;}
+  .rule-dice-copy{padding:5px 9px;border:1px solid var(--maroon);border-radius:5px;background:transparent;color:var(--maroon);font-family:Georgia,"Times New Roman",serif;font-size:11.5px;cursor:pointer;white-space:nowrap;}
+  .rule-dice-copy:hover{background:var(--maroon);color:var(--parchment);}
+  .rule-dice-paste{padding:5px 8px;border:1px solid var(--line);border-radius:5px;background:#f3e5c4;color:#5d3b24;font-family:Georgia,"Times New Roman",serif;font-size:11px;cursor:pointer;white-space:nowrap;}
+  .rule-dice-paste:hover{border-color:var(--maroon);color:var(--maroon);}
+  .rule-dice-affix{font-size:12.5px;color:#4b351f;}
+  .rule-dice-result-wrap{display:inline-flex;align-items:center;gap:5px;margin-left:2px;}
+  .rule-dice-result-wrap label{font-size:11.5px;color:#745d3e;white-space:nowrap;}
+  .rule-dice-result{width:66px!important;padding:5px 7px!important;font-size:12px!important;height:30px;}
+  .rule-dice-resolved{display:inline-block;min-width:95px;font-size:12px;font-weight:700;color:var(--high);}
+  .rule-context-prompt{padding:12px 14px;border:1px dashed var(--line);border-radius:7px;background:#fffaf0;color:#684f34;line-height:1.45;}
+  .rule-context-prompt b{color:var(--maroon-deep);}
+  .rule-unconditional-title{margin:2px 0 -1px;font-family:'magic',Georgia,"Times New Roman",serif;font-size:17px;color:var(--maroon-deep);}
+  @media(max-width:640px){
+    .rule-outcome-row{grid-template-columns:1fr;gap:3px;}
+    .rule-dice-line{align-items:flex-start;}
+    .rule-dice-result-wrap{width:100%;margin-left:0;margin-top:2px;}
+  }
+
+  /* ===== BONUS STRUTTURATI — RIUSCITA CONOSCENZE ===== */
+  .knowledge-bonus-manager{
+    margin-top:16px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;
+    background:rgba(94,30,10,.075);
+  }
+  .knowledge-bonus-manager h3{margin:0 0 5px;color:var(--maroon-deep);font-family:'magic',Georgia,"Times New Roman",serif;font-size:19px;font-weight:normal;}
+  .knowledge-bonus-help{font-size:13px;color:#6b5638;margin:0 0 10px;line-height:1.45;}
+  .knowledge-bonus-list{display:grid;gap:9px;}
+  .knowledge-bonus-row{display:grid;grid-template-columns:1fr;gap:9px;padding:11px;border:1px solid var(--line);border-radius:7px;background:#fffaf0;}
+  .knowledge-bonus-field{display:flex;flex-direction:column;min-width:0;}
+  .knowledge-bonus-field label{font-size:11px;text-transform:uppercase;letter-spacing:.045em;color:var(--maroon);font-weight:700;margin-bottom:4px;line-height:1.2;}
+  .knowledge-bonus-field input,.knowledge-bonus-field select{width:100%;box-sizing:border-box;background:#fffdf6;color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:7px 8px;font-family:Georgia,"Times New Roman",serif;}
+  .knowledge-bonus-preset-wrap label{font-size:11px;}
+  .knowledge-bonus-manual-fields{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;align-items:start;}
+  .knowledge-bonus-row.is-manual .knowledge-bonus-manual-fields{display:grid;}
+  .knowledge-bonus-compact-summary{display:none;padding:9px 11px;border:1px solid rgba(137,44,15,.28);border-left:4px solid var(--gold);border-radius:6px;background:rgba(233,217,172,.38);color:#4b3520;line-height:1.42;font-size:12.5px;}
+  .knowledge-bonus-row.has-preset .knowledge-bonus-compact-summary{display:block;}
+  .knowledge-bonus-action-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;padding-top:2px;}
+  .knowledge-bonus-apply{display:flex;align-items:center;gap:6px;min-height:34px;color:#4b3520;font-size:12.5px;font-weight:700;}
+  .knowledge-bonus-uses{width:145px;flex:0 1 145px;}
+  .knowledge-bonus-remaining{flex:1 1 190px;color:#735c3f;font-size:12px;line-height:1.3;}
+  .knowledge-bonus-remove{width:38px;height:34px;padding:0;margin:0;background:transparent;border:1px solid var(--maroon);border-radius:5px;color:var(--maroon);cursor:pointer;font-size:18px;line-height:1;}
+  .knowledge-bonus-remove:hover{background:var(--maroon);color:var(--parchment);}
+  .knowledge-bonus-add{margin-top:9px;background:#efe0bb;color:var(--maroon-deep);border:1px solid var(--maroon);border-radius:6px;padding:8px 12px;cursor:pointer;font-family:Georgia,"Times New Roman",serif;font-weight:700;}
+  .knowledge-bonus-add:hover{background:#ead5a5;}
+  .knowledge-bonus-note{font-size:12px;line-height:1.4;color:#735c3f;}
+  .reference-always{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line);}
+  .reference-title{margin:0 0 8px;font-family:'magic',Georgia,"Times New Roman",serif;font-size:18px;color:var(--maroon-deep);}
+  .reference-title i{font-size:14px;margin-right:5px;color:var(--maroon);}
+  .reference-always .table-block{margin-top:0;}
+  .active-bonus-line{margin-top:8px;padding:7px 9px;border-radius:5px;background:rgba(201,162,39,.10);color:#5c4328;font-size:12.5px;line-height:1.4;}
+  .active-bonus-line:empty{display:none;}
+
   @media(max-width:640px){
     body{padding:10px;}
     .wrap{padding:16px 12px 20px;}
     .card{padding:13px 12px;}
     .step-label{font-size:18px;}
     .sigillo-conoscenze{width:58px;height:58px;font-size:25px;}
+    .knowledge-bonus-manual-fields{grid-template-columns:1fr;}
+    .knowledge-bonus-action-row{align-items:stretch;}
+    .knowledge-bonus-uses{width:100%;flex:1 1 100%;}
+    .knowledge-bonus-remove{width:100%;}
     #schedaCard .knowledge-link-box{align-items:stretch;flex-direction:column;}
     #schedaCard .knowledge-link-button{width:100%;}
   }
 
 
-  /* v15 — ritorno contestuale a Magizoologia / Erbologia. */
+
+  /* ===== PONTE MAGIZOOLOGIA ↔ RIUSCITA v2 — richieste concorrenti isolate per requestId ===== */
+  #magizoologiaBridgeCard .step-label{margin-bottom:10px;}
+  .mz-bridge-box{
+    padding:12px 14px;
+    border:1px solid #9bb276;
+    border-left:4px solid #6f8b4e;
+    border-radius:7px;
+    background:rgba(155,178,118,.14);
+    color:#3f3424;
+    line-height:1.48;
+  }
+  .mz-bridge-box strong{color:var(--maroon-deep);}
+  .mz-bridge-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+  .mz-bridge-link,
+  .mz-bridge-resend{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    padding:8px 12px;
+    border:1px solid var(--maroon-deep);
+    border-radius:6px;
+    background:var(--maroon);
+    color:#fff8e8;
+    text-decoration:none;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .mz-bridge-link:hover,.mz-bridge-resend:hover{background:#a43b17;}
+  .mz-bridge-status{margin-top:9px;font-size:13px;color:#5f4b31;}
+  .mz-bridge-status.ok{font-weight:700;color:#39662c;}
+  .mz-bridge-status.warn{font-weight:700;color:#892c0f;}
+  @media(max-width:640px){.mz-bridge-link,.mz-bridge-resend{width:100%;}}
+
+  /* ===== v20 — ESITO COMPATTO + RIEPILOGO UTILIZZO ===== */
+  .inline-outcome-legend{
+    margin:9px 0 2px;
+    padding:9px 11px;
+    border:1px solid rgba(184,154,90,.72);
+    border-radius:6px;
+    background:rgba(255,250,240,.62);
+    color:#5a4630;
+    font-size:12.5px;
+    line-height:1.4;
+  }
+  .inline-outcome-legend strong{color:var(--maroon-deep);}
+  .inline-outcome-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .inline-outcome-chip{
+    display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border:1px solid var(--line);
+    border-radius:999px;background:#fffaf0;color:#4a351f;font-size:12px;white-space:nowrap;
+  }
+  .inline-outcome-note{margin-top:6px;color:#7a664b;font-style:italic;font-size:11.5px;}
+  .modifier-item.mod-knowledge{border-left-color:var(--maroon-deep);}
+  .modifier-item.mod-usage{border-left-color:#7c6b34;}
+
+
+  /* ===== v23 — ritorno contestuale a Magizoologia / Erbologia ===== */
   .guide-return-card{padding:12px 14px;margin-bottom:14px;text-align:center;}
   .guide-return-card .guide-return-text{margin:0 0 9px;color:#5a4630;font-size:14px;line-height:1.4;}
   .guide-return-card .guide-return-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 13px;border:1px solid var(--maroon);border-radius:6px;background:var(--maroon);color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:14px;}
   .guide-return-card .guide-return-link:hover{background:var(--maroon-deep);}
+
+  /* ===== PONTE AVANZATO ERBOLOGIA ↔ RIUSCITA v24 ===== */
+  #erbologiaBridgeCard .step-label{margin-bottom:10px}.erb-r-bridge-box{padding:12px 14px;border:1px solid #8eaa70;border-left:4px solid #668c48;border-radius:7px;background:rgba(145,177,104,.14);color:#3f3424;line-height:1.48}.erb-r-bridge-box strong{color:var(--maroon-deep)}.erb-r-bridge-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center}.erb-r-bridge-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #536e3b;border-radius:6px;background:#668c48;color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:13px}.erb-r-bridge-link:hover{filter:brightness(1.08)}.erb-r-bridge-status{margin-top:9px;font-size:13px;color:#5f4b31}.erb-r-bridge-status.ok{font-weight:700;color:#39662c}.erb-r-bridge-status.warn{font-weight:700;color:#892c0f}@media(max-width:640px){.erb-r-bridge-link{width:100%}}
 
 </style>
 </head>
@@ -824,12 +960,8 @@
     <p class="step-label"><span class="num">0</span>Conoscenza selezionata <span id="schedaTag"></span></p>
     <div class="scheda-box" id="schedaBox"></div>
 
-    <div id="autoDadiExtraWrap" class="hidden">
-      <p class="step-label auto-extra-title">Tiri extra previsti dal regolamento</p>
-      <p class="note auto-extra-note">Il tool indica automaticamente a cosa serve ogni dado e, quando necessario, include nel codice anche la legenda degli esiti.</p>
-      <div class="dado-extra-list" id="dadoExtraList"></div>
-    </div>
   </div>
+
 
   <div class="card hidden" id="autoconclusivaCard">
     <p class="step-label"><span class="num">1</span>Riuscita</p>
@@ -865,6 +997,7 @@
 
   <div class="card hidden" id="adultoExtraCard">
     <p class="step-label"><span class="num">2</span>Sapienza affine</p>
+    <p class="note">Serve sia quando la Sapienza modifica la riuscita, sia per mostrare automaticamente le Specifiche corrette della Conoscenza.</p>
     <div class="btn-grid" id="sapienzaExtraGrid">
       <div class="choice" data-value="senza">Senza Sapienza affine</div>
       <div class="choice" data-value="con">Con Sapienza affine</div>
@@ -883,6 +1016,24 @@
     </select>
   </div>
 
+  <div id="autoDadiExtraWrap" class="card hidden">
+    <p class="step-label auto-extra-title"><span class="num"><i class="fa-solid fa-dice" aria-hidden="true"></i></span>Effetti legati alla riuscita</p>
+    <p class="note auto-extra-note">Il tool mostra soltanto la parte delle Specifiche che riguarda il PG selezionato. Le righe con un dado hanno il codice copiabile e un campo dove riportare il risultato del dado secondario.</p>
+    <div class="dado-extra-list" id="dadoExtraList"></div>
+  </div>
+
+
+  <div class="card hidden" id="magizoologiaBridgeCard">
+    <p class="step-label"><span class="num"><i class="fa-solid fa-paw" aria-hidden="true"></i></span>Collegamento Magizoologia</p>
+    <div class="mz-bridge-box" id="magizoologiaBridgeBody"></div>
+  </div>
+
+
+  <div class="card hidden" id="erbologiaBridgeCard">
+    <p class="step-label"><span class="num"><i class="fa-brands fa-pagelines" aria-hidden="true"></i></span>Collegamento Erbologia</p>
+    <div class="erb-r-bridge-box" id="erbologiaBridgeBody"></div>
+  </div>
+
   <div class="card" id="detailsCard">
     <p class="step-label"><span class="num">3</span>Dettagli del tiro</p>
     <label class="field-label" for="nomePg">Nome del PG</label>
@@ -891,15 +1042,18 @@
     <input type="text" id="nomeConoscenza" placeholder="Es. Bombarda Maxima">
     <label class="field-label" for="linkRole">Link alla Role</label>
     <input type="text" id="linkRole" placeholder="Es. https://tuoforum.forumfree.it/?t=...">
-    <div id="bonusRowField">
-      <label class="field-label" for="bonusInput">Bonus / Malus da Oggetto o Conoscenza (si somma al dado)</label>
-      <input type="number" id="bonusInput" value="0" step="1">
+    <div id="bonusRowField" class="knowledge-bonus-manager">
+      <h3>Oggetti / Conoscenze — Riuscita</h3>
+      <p class="knowledge-bonus-help">Aggiungi ciò che interviene sulla riuscita di questa Conoscenza. Come in Magizoologia puoi usare un effetto già previsto dal catalogo oppure inserirne uno manualmente. Il tool somma automaticamente Bonus/Malus alle Possibilità e tiene nel riepilogo anche limiti di riuscita, Forza, Destrezza, Fatica e altri effetti utili.</p>
+      <div class="knowledge-bonus-list" id="knowledgeBonusList"></div>
+      <button type="button" class="knowledge-bonus-add" id="addKnowledgeBonus">+ Aggiungi bonus / malus</button>
     </div>
 
-    <details id="tabellaDetails">
-      <summary>Mostra la tabella di riferimento</summary>
+    <div id="tabellaReference" class="reference-always">
+      <p class="reference-title"><i class="fa-solid fa-table-list" aria-hidden="true"></i> Tabella di riferimento</p>
       <div id="tabellaContent"></div>
-    </details>
+      <div id="activeBonusLine" class="active-bonus-line"></div>
+    </div>
 
     <div id="autoActionWrap" class="hidden">
       <button class="roll-btn" id="autoBtn" type="button">Registra riuscita automatica</button>
@@ -908,19 +1062,18 @@
     <div id="diceActionWrap" class="hidden">
       <label class="field-label" for="diceCodeBox">Codice da incollare nel forum</label>
       <textarea id="diceCodeBox" readonly rows="7" style="width:100%; padding:10px 12px; font-family:'EB Garamond', serif; font-size:14px; border:1.5px solid var(--line); border-radius:8px; background:#fffdf6; color:var(--ink); resize:vertical;"></textarea>
+      <div id="inlineOutcomeLegend" class="inline-outcome-legend hidden"></div>
       <button class="roll-btn" id="copyCodeBtn" type="button">Copia codice dado</button>
     </div>
   </div>
 
-  <div class="card hidden" id="pasteCard">
-    <p class="step-label"><span class="num">4</span>Esito ottenuto sul forum</p>
-    <p class="note">Dopo aver postato il codice qui sopra sul forum, incolla qui il numero uscito dal tiro [dice=1d10].</p>
-    <label class="field-label" for="risultatoInput">Risultato del dado (1-10)</label>
-    <input type="number" id="risultatoInput" min="1" max="10" step="1" placeholder="Es. 7">
-    <button class="roll-btn" id="calcBtn" type="button">Calcola risultato</button>
+  <!-- v20: il risultato effettivo resta sul forum; questi nodi sono mantenuti solo per compatibilità interna e non vengono mostrati. -->
+  <div class="card hidden" id="pasteCard" aria-hidden="true">
+    <input type="number" id="risultatoInput" min="1" max="10" step="1">
+    <button id="calcBtn" type="button"></button>
   </div>
 
-  <div class="card" id="resultCard">
+  <div class="card hidden" id="resultCard" aria-hidden="true">
     <div class="empty-result" id="emptyResult">Completa le scelte sopra, posta il codice sul forum e incolla il risultato per scoprire la riuscita.</div>
     <div class="result hidden" id="resultBody">
       <div class="die-row">
@@ -939,15 +1092,15 @@
   </div>
 
   <div class="card hidden" id="modifiersCard">
-    <p class="step-label"><span class="num"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>Riepilogo bonus / malus</p>
-    <p class="note">Raccoglie i modificatori esplicitamente indicati nella scheda della Conoscenza e l'eventuale bonus/malus inserito per il tiro.</p>
+    <p class="step-label"><span class="num"><i class="fa-solid fa-scroll" aria-hidden="true"></i></span>Riepilogo utilizzo</p>
+    <p class="note">Mostra solo ciò che serve dopo l'utilizzo: Conoscenza usata, Fatica consumata, bonus/malus applicati e consumi degli eventuali oggetti o effetti a usi limitati.</p>
     <div class="modifier-summary" id="modifierSummary"></div>
     <label class="field-label" for="modifierCodeBox">Riepilogo copiabile per il forum</label>
     <textarea id="modifierCodeBox" readonly rows="6"></textarea>
-    <button class="roll-btn" id="copyModifiersBtn" type="button">Copia riepilogo bonus / malus</button>
+    <button class="roll-btn" id="copyModifiersBtn" type="button">Copia riepilogo utilizzo</button>
   </div>
 
-  <footer>I bonus e i malus da Oggetti o Conoscenze si sommano al risultato del dado, come da regolamento.</footer>
+  <footer>Il dado viene risolto sul forum: qui prepari il codice e tieni traccia soltanto di costi, modificatori e consumi dell'utilizzo.</footer>
 </div>
 
 <script>
@@ -1019,13 +1172,490 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     scolastica:'Scolastica', extra:'Extra', avanzata:'Avanzata'
   };
 
-  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null };
+  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null, extraRollResults:{} };
 
   function qs(id){ return document.getElementById(id); }
   function escapeHtml(value){
     return String(value == null ? '' : value)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+
+  /* ===== PONTE MAGIZOOLOGIA ↔ RIUSCITA ===== */
+  var MZ_BRIDGE_REQUEST_PREFIX = 'ffgdr_mz_knowledge_request_v2_';
+  var MZ_BRIDGE_RESPONSE_PREFIX = 'ffgdr_mz_knowledge_response_v2_';
+  /* Compatibilità con eventuali richieste aperte dalla v1 del ponte. */
+  var MZ_BRIDGE_LEGACY_REQUEST_KEY = 'ffgdr_mz_knowledge_request_v1';
+  var MZ_BRIDGE_LEGACY_RESPONSE_KEY = 'ffgdr_mz_knowledge_response_v1';
+  var MZ_TOOL_URL = 'https://felixfelicisharrypottergdr.forumfree.it/?pag=creature';
+  var mzBridgeRequest = null;
+  var mzBridgeLastResult = null;
+  var MZ_PHASE_LABELS = {
+    fiducia:'Fiducia',
+    scoperta:'Scoperta del problema',
+    cura:'Cura del problema',
+    domesticazione:'Domesticazione',
+    allevamento:'Allevamento / Riproduzione',
+    ricerca:'Ricerca Creature Magiche'
+  };
+  var MZ_KNOWLEDGE_PHASES = {
+    'mimica-limbica':'Fiducia',
+    'diagnosi faunica':'Scoperta del problema',
+    'somministrazione faunica':'Cura del problema',
+    'imitazione':'Domesticazione',
+    'intermediario faunico':'Allevamento / Riproduzione',
+    'somnum':'Fasi magizoologiche',
+    'imposium':'Fiducia'
+  };
+
+  function mzBridgeSimpleName(value){
+    var s=String(value||'').toLowerCase();
+    try{s=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');}catch(e){}
+    return s.replace(/[✔+*]/g,'').replace(/\s+/g,' ').trim();
+  }
+  function mzBridgeFindEntry(name){
+    var target=mzBridgeSimpleName(name);
+    if(!target)return null;
+    for(var i=0;i<CONOSCENZE_DB.length;i++){
+      if(mzBridgeSimpleName(CONOSCENZE_DB[i].name)===target)return CONOSCENZE_DB[i];
+    }
+    return null;
+  }
+  function mzIsMagizoologiaEntry(entry){
+    if(!entry)return false;
+    var source=String(entry.source||'').toLowerCase();
+    return source.indexOf('magizoolog')!==-1 || !!MZ_KNOWLEDGE_PHASES[mzBridgeSimpleName(entry.name)];
+  }
+  function mzBridgeRequestMatches(entry){
+    return !!(mzBridgeRequest && entry && mzBridgeSimpleName(mzBridgeRequest.knowledge)===mzBridgeSimpleName(entry.name));
+  }
+  function mzBridgePhaseLabel(req,entry){
+    if(req&&req.phase&&MZ_PHASE_LABELS[req.phase])return MZ_PHASE_LABELS[req.phase];
+    return MZ_KNOWLEDGE_PHASES[mzBridgeSimpleName(entry&&entry.name)]||'Magizoologia';
+  }
+  function mzBridgeSetCardStatus(message,kind){
+    var el=qs('mzBridgeStatus');
+    if(!el)return;
+    el.className='mz-bridge-status'+(kind?' '+kind:'');
+    el.textContent=message||'';
+  }
+  function mzBridgeUpdateCard(entry){
+    var card=qs('magizoologiaBridgeCard'),body=qs('magizoologiaBridgeBody');
+    if(!card||!body)return;
+    if(!mzIsMagizoologiaEntry(entry)){
+      card.className='card hidden';
+      body.innerHTML='';
+      return;
+    }
+    card.className='card';
+    var phase=mzBridgePhaseLabel(mzBridgeRequestMatches(entry)?mzBridgeRequest:null,entry);
+    var linked=mzBridgeRequestMatches(entry);
+    var html='';
+    if(linked){
+      html+='<strong>Richiesta ricevuta dal tool di Magizoologia · '+escapeHtml(phase)+'.</strong><br>'+
+        'La Conoscenza è stata preselezionata. Copia qui il dado e lancialo sul forum: <b>non devi riportare il numero in questo Generatore</b>. '+
+        'Quando torni a Magizoologia, indica lì direttamente la fascia di riuscita ottenuta (0% / 33% / 66% / 100%); l’eventuale dado secondario verrà gestito da quel tool.';
+    }else{
+      html+='<strong>Questa Conoscenza è collegata a Magizoologia · '+escapeHtml(phase)+'.</strong><br>'+
+        'Prepara qui il tiro di riuscita, lanciarlo sul forum e usa poi la fascia ottenuta nel tool di Magizoologia.';
+    }
+    html+='<div class="mz-bridge-actions">'+
+      '<a class="mz-bridge-link" href="'+MZ_TOOL_URL+'" target="_top" rel="noopener"><i class="fa-solid fa-paw" aria-hidden="true"></i> Apri il tool di Magizoologia</a>';
+    html+='</div><div class="mz-bridge-status" id="mzBridgeStatus">'+
+      (linked?'Il collegamento resta associato alla stessa richiesta di Magizoologia.':'Il tool è stato aperto direttamente.')+
+      '</div>';
+    body.innerHTML=html;
+    var resend=qs('mzBridgeResend');
+    if(resend){
+      resend.addEventListener('click',function(){
+        if(mzBridgeLastResult)mzBridgeStoreResponse(mzBridgeLastResult,true);
+      });
+    }
+  }
+  function mzBridgeStoreResponse(payload,isResend){
+    if(!payload || !payload.requestId)return false;
+    try{
+      /* Ogni richiesta ha una risposta separata: più schede possono convivere
+         senza sovrascrivere l'esito di un'altra Conoscenza. */
+      window.localStorage.setItem(MZ_BRIDGE_RESPONSE_PREFIX+payload.requestId,JSON.stringify(payload));
+      mzBridgeSetCardStatus((isResend?'Esito reinviato':'Esito inviato')+' a Magizoologia: riuscita '+payload.pct+'%. Torna alla scheda di Magizoologia già aperta.','ok');
+      var resend=qs('mzBridgeResend');if(resend)resend.classList.remove('hidden');
+      return true;
+    }catch(e){
+      mzBridgeSetCardStatus('Il trasferimento automatico non è disponibile in questo browser. Puoi comunque riportare manualmente in Magizoologia la riuscita '+payload.pct+'%.','warn');
+      return false;
+    }
+  }
+  function mzBridgePublishResult(pct,die,total,modifier){
+    if(!mzBridgeRequest || !state.selectedEntry || !mzBridgeRequestMatches(state.selectedEntry))return;
+    var payload={
+      version:1,
+      requestId:mzBridgeRequest.requestId,
+      knowledge:state.selectedEntry.name,
+      phase:mzBridgeRequest.phase||'',
+      context:mzBridgeRequest.context||'',
+      pct:Number(pct),
+      die:Number(die),
+      total:Number(total),
+      modifier:Number(modifier||0),
+      createdAt:Date.now()
+    };
+    mzBridgeLastResult=payload;
+    mzBridgeStoreResponse(payload,false);
+  }
+  function mzBridgeApplyProfile(req,entry){
+    if(!req)return;
+    if(req.pgType==='studente' || req.pgType==='adulto'){
+      state.pg=req.pgType;
+      setActive('pgGrid',req.pgType);
+    }
+    if(req.pgType==='studente'){
+      var map={T:'troll',D:'desolante',S:'scadente',A:'accettabile',O:'oltre',E:'eccezionale'};
+      var voto=map[String(req.studentVote||'').toUpperCase()];
+      if(voto)qs('votoSelect').value=voto;
+    }
+    if(req.pgType==='adulto' && entry && entry.tipologia==='extra'){
+      state.sapienzaExtra=req.hasSapienza?'con':'senza';
+      setActive('sapienzaExtraGrid',state.sapienzaExtra);
+    }
+    refreshVisibility();
+  }
+  function mzBridgeRestoreRequest(){
+    try{var bridgeSource=(new URLSearchParams(window.location.search).get('bridge')||'').toLowerCase();if(bridgeSource&&bridgeSource!=='magizoologia')return;}catch(e){}
+    var req=null,chosenKey='',now=Date.now(),candidates=[];
+    try{
+      /* Le richieste v2 vivono ciascuna nella propria chiave. Ogni nuova
+         scheda del Generatore prende la richiesta pendente più vecchia e la
+         rimuove subito dalla coda, lasciando intatte le altre. */
+      for(var i=0;i<window.localStorage.length;i++){
+        var key=window.localStorage.key(i)||'';
+        if(key.indexOf(MZ_BRIDGE_REQUEST_PREFIX)!==0)continue;
+        var raw=window.localStorage.getItem(key),obj=null;
+        try{obj=JSON.parse(raw);}catch(e){obj=null;}
+        if(!obj || !obj.requestId || !obj.knowledge || (obj.createdAt && now-Number(obj.createdAt)>30*60*1000)){
+          try{window.localStorage.removeItem(key);}catch(e){}
+          i--; continue;
+        }
+        candidates.push({key:key,req:obj});
+      }
+      candidates.sort(function(a,b){return Number(a.req.createdAt||0)-Number(b.req.createdAt||0);});
+      if(candidates.length){
+        chosenKey=candidates[0].key;
+        req=candidates[0].req;
+        /* Claim sincrono: una seconda scheda non troverà più questa richiesta. */
+        window.localStorage.removeItem(chosenKey);
+      }else{
+        /* Fallback v1: serve soltanto durante la transizione fra le versioni. */
+        var legacyRaw=window.localStorage.getItem(MZ_BRIDGE_LEGACY_REQUEST_KEY);
+        if(legacyRaw){
+          try{req=JSON.parse(legacyRaw);}catch(e){req=null;}
+          window.localStorage.removeItem(MZ_BRIDGE_LEGACY_REQUEST_KEY);
+        }
+      }
+    }catch(e){return;}
+    if(!req || !req.requestId || !req.knowledge)return;
+    if(req.createdAt && now-Number(req.createdAt)>30*60*1000)return;
+    var entry=mzBridgeFindEntry(req.knowledge);
+    if(!entry)return;
+    mzBridgeRequest=req;
+    selectConoscenza(entry);
+    mzBridgeApplyProfile(req,entry);
+    mzBridgeUpdateCard(entry);
+    if(req.pgType==='adulto' && entry.tipologia==='avanzata'){
+      mzBridgeSetCardStatus('Conoscenza e tipo di PG importati. Seleziona anche il livello della Sapienza affine richiesto dal Generatore, poi esegui il tiro.','warn');
+    }else{
+      mzBridgeSetCardStatus('Conoscenza e dati compatibili del PG importati da Magizoologia. Ora determina la riuscita.','');
+    }
+  }
+
+
+  /* ===== PONTE ERBOLOGIA ↔ RIUSCITA DELLE CONOSCENZE v24 ===== */
+  var ERB_BRIDGE_REQUEST_PREFIX='ffgdr_erb_knowledge_request_v2_';
+  var ERB_BRIDGE_RESPONSE_PREFIX='ffgdr_erb_knowledge_response_v2_';
+  var ERB_BRIDGE_LEGACY_REQUEST_KEY='ffgdr_erb_knowledge_request_v1';
+  var ERB_BRIDGE_LEGACY_RESPONSE_KEY='ffgdr_erb_knowledge_response_v1';
+  var erbBridgeRequest=null,erbBridgeLastResult=null;
+  var ERB_KNOWLEDGE_PHASES={'herbivicus':'Ricerca Piante Magiche','pollice verde':'Interazione','sradico':'Esportazione','planto':'Collocazione','pax':'Interazione'};
+  function erbBridgeSimpleName(v){return mzBridgeSimpleName(v);}
+  function erbBridgeFindEntry(name){return mzBridgeFindEntry(name);}
+  function erbIsErbologiaEntry(entry){return !!(entry&&ERB_KNOWLEDGE_PHASES[erbBridgeSimpleName(entry.name)]);}
+  function erbBridgeRequestMatches(entry){return !!(erbBridgeRequest&&entry&&erbBridgeSimpleName(erbBridgeRequest.knowledge)===erbBridgeSimpleName(entry.name));}
+  function erbBridgePhaseLabel(req,entry){if(req&&req.phase){var m={ricerca:'Ricerca Piante Magiche',interazione:'Interazione',esportazione:'Esportazione',collocazione:'Collocazione',coltivazione:'Coltivazione',pax:'Interazione'};if(m[req.phase])return m[req.phase];}return ERB_KNOWLEDGE_PHASES[erbBridgeSimpleName(entry&&entry.name)]||'Erbologia';}
+  function erbBridgeSetCardStatus(msg,kind){var el=qs('erbBridgeStatus');if(!el)return;el.className='erb-r-bridge-status'+(kind?' '+kind:'');el.textContent=msg||'';}
+  function erbSafeReturn(req){try{var raw=req&&req.returnUrl;if(!raw)return '';var u=new URL(raw,window.location.href);return (u.protocol==='http:'||u.protocol==='https:')?u.href:'';}catch(e){return '';}}
+  function erbBridgeUpdateCard(entry){var card=qs('erbologiaBridgeCard'),body=qs('erbologiaBridgeBody');if(!card||!body)return;if(!erbIsErbologiaEntry(entry)){card.className='card hidden';body.innerHTML='';return;}card.className='card';var linked=erbBridgeRequestMatches(entry),phase=erbBridgePhaseLabel(linked?erbBridgeRequest:null,entry),ret=linked?erbSafeReturn(erbBridgeRequest):'';var html=linked?('<strong>Richiesta ricevuta dal tool di Erbologia · '+escapeHtml(phase)+'.</strong><br>La Conoscenza e i dati compatibili del PG sono stati preselezionati. Prepara qui il codice del dado. Per i tiri non automatici, il risultato resta sul forum e la fascia 0% / 33% / 66% / 100% va poi usata nella riga di Erbologia da cui sei partito.'):('<strong>Questa Conoscenza è collegata a Erbologia · '+escapeHtml(phase)+'.</strong><br>Puoi preparare qui la riuscita e usare l’esito nel relativo passaggio del tool di Erbologia.');if(ret)html+='<div class="erb-r-bridge-actions"><a class="erb-r-bridge-link" href="'+escapeHtml(ret)+'" target="_top" rel="noopener"><i class="fa-brands fa-pagelines" aria-hidden="true"></i> Torna al tool di Erbologia</a></div>';html+='<div class="erb-r-bridge-status" id="erbBridgeStatus">'+(linked?'Collegamento associato alla stessa richiesta di Erbologia.':'Generatore aperto direttamente.')+'</div>';body.innerHTML=html;}
+  function erbBridgeStoreResponse(payload,isResend){if(!payload||!payload.requestId)return false;try{localStorage.setItem(ERB_BRIDGE_RESPONSE_PREFIX+payload.requestId,JSON.stringify(payload));erbBridgeSetCardStatus((isResend?'Esito reinviato':'Esito inviato')+' a Erbologia: riuscita '+payload.pct+'%.','ok');return true;}catch(e){erbBridgeSetCardStatus('Trasferimento automatico non disponibile; riporta manualmente in Erbologia la riuscita '+payload.pct+'%.','warn');return false;}}
+  function erbBridgePublishResult(pct,die,total,modifier){if(!erbBridgeRequest||!state.selectedEntry||!erbBridgeRequestMatches(state.selectedEntry))return;var payload={version:1,requestId:erbBridgeRequest.requestId,knowledge:state.selectedEntry.name,phase:erbBridgeRequest.phase||'',context:erbBridgeRequest.context||'',pct:Number(pct),die:Number(die),total:Number(total),modifier:Number(modifier||0),createdAt:Date.now()};erbBridgeLastResult=payload;erbBridgeStoreResponse(payload,false);}
+  function bridgeSapienzaLevel(score){var n=Number(score||0);if(n<=0)return 'senza';if(n<=5)return 'lv1';if(n<=10)return 'lv2';if(n<=15)return 'lv3';if(n<=20)return 'lv4';return 'lv5';}
+  function erbBridgeApplyProfile(req,entry){if(!req)return;if(req.pgType==='studente'||req.pgType==='adulto'){state.pg=req.pgType;setActive('pgGrid',req.pgType);}if(req.pgType==='studente'){var map={T:'troll',D:'desolante',S:'scadente',A:'accettabile',O:'oltre',E:'eccezionale'},v=map[String(req.studentVote||'').toUpperCase()];if(v)qs('votoSelect').value=v;}if(req.pgType==='adulto'){state.sapienzaExtra=req.hasSapienza?'con':'senza';if(entry&&entry.tipologia==='extra')setActive('sapienzaExtraGrid',state.sapienzaExtra);if(entry&&entry.tipologia==='avanzata'){var lv=bridgeSapienzaLevel(req.sapienzaScore);qs('sapienzaAvanzataSelect').value=lv;}}refreshVisibility();}
+  function erbBridgeRestoreRequest(){var src='';try{src=(new URLSearchParams(window.location.search).get('bridge')||'').toLowerCase();}catch(e){}if(src!=='erbologia')return;var now=Date.now(),cand=[],req=null;try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'';if(k.indexOf(ERB_BRIDGE_REQUEST_PREFIX)!==0)continue;var o=null;try{o=JSON.parse(localStorage.getItem(k)||'');}catch(e){}if(!o||!o.requestId||!o.knowledge||(o.createdAt&&now-Number(o.createdAt)>30*60*1000)){try{localStorage.removeItem(k);}catch(e){}i--;continue;}cand.push({key:k,req:o});}cand.sort(function(a,b){return Number(a.req.createdAt||0)-Number(b.req.createdAt||0);});if(cand.length){req=cand[0].req;localStorage.removeItem(cand[0].key);}else{var raw=localStorage.getItem(ERB_BRIDGE_LEGACY_REQUEST_KEY);if(raw){try{req=JSON.parse(raw);}catch(e){}localStorage.removeItem(ERB_BRIDGE_LEGACY_REQUEST_KEY);}}}catch(e){return;}if(!req||!req.requestId||!req.knowledge)return;var entry=erbBridgeFindEntry(req.knowledge);if(!entry)return;erbBridgeRequest=req;selectConoscenza(entry);erbBridgeApplyProfile(req,entry);erbBridgeUpdateCard(entry);erbBridgeSetCardStatus('Conoscenza e dati compatibili del PG importati da Erbologia. Ora prepara la riuscita.','');}
+
+
+  /* ===== BONUS STRUTTURATI — adattati dalla Magizoologia ===== */
+  var KNOWLEDGE_BONUS_PRESETS = {
+    amuleto_1:{label:'Amuleto della Fortuna (+1)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:1,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Gli Amuleti della Fortuna non sono cumulabili: viene applicato soltanto il valore più alto.'},
+    amuleto_2:{label:'Amuleto della Fortuna (+2)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:2,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Gli Amuleti della Fortuna non sono cumulabili: viene applicato soltanto il valore più alto.'},
+    amuleto_3:{label:'Amuleto della Fortuna (+3)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:3,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Gli Amuleti della Fortuna non sono cumulabili: viene applicato soltanto il valore più alto.'},
+    amuleto_4:{label:'Amuleto della Fortuna (+4)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:4,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Gli Amuleti della Fortuna non sono cumulabili: viene applicato soltanto il valore più alto.'},
+    amuleto_5:{label:'Amuleto della Fortuna (+5)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:5,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Gli Amuleti della Fortuna non sono cumulabili: viene applicato soltanto il valore più alto.'},
+    amuleto_6:{label:'Amuleto della Fortuna (+6)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:6,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Gli Amuleti della Fortuna non sono cumulabili: viene applicato soltanto il valore più alto.'},
+    amuleto_7:{label:'Amuleto della Fortuna (+7)',groupLabel:'Bonus generici',source:'Amuleto della Fortuna',condition:'3 usi · massimo 1 Amuleto della Fortuna per role',type:'possibilita',value:7,total:3,stackGroup:'fortuna',note:'Bonus generico alla riuscita. Per valori superiori usa «Altro bonus / effetto manuale».'},
+
+    magibio_1:{label:'Magi Biografia — bonus +1 già ottenuto',groupLabel:'Altre Conoscenze',source:'Magi Biografia',condition:'Bonus affine già preparato in una role precedente · 3 usi',type:'possibilita',value:1,total:3,stackGroup:'magi-biografia',note:'La Fatica è stata sostenuta quando il bonus è stato preparato; qui viene consumato soltanto uno dei 3 usi.'},
+    magibio_2:{label:'Magi Biografia — bonus +2 già ottenuto',groupLabel:'Altre Conoscenze',source:'Magi Biografia',condition:'Bonus affine già preparato in una role precedente · 3 usi',type:'possibilita',value:2,total:3,stackGroup:'magi-biografia',note:'La Fatica è stata sostenuta quando il bonus è stato preparato; qui viene consumato soltanto uno dei 3 usi.'},
+    magibio_3:{label:'Magi Biografia — bonus +3 già ottenuto',groupLabel:'Altre Conoscenze',source:'Magi Biografia',condition:'Bonus affine già preparato in una role precedente · 3 usi',type:'possibilita',value:3,total:3,stackGroup:'magi-biografia',note:'La Fatica è stata sostenuta quando il bonus è stato preparato; qui viene consumato soltanto uno dei 3 usi.'},
+    scrittura_runica:{label:'Scrittura Runica (+1 a Divinazione Runica)',groupLabel:'Altre Conoscenze',source:'Scrittura Runica',condition:'Solo quando si usa Divinazione Runica',type:'possibilita',value:1,total:0,unlimited:true,stackGroup:'scrittura-runica',note:'Bonus previsto direttamente da Scrittura Runica per l’uso di Divinazione Runica.'},
+
+    archimede_s33:{label:'Sigillo di Archimede — Studente 33% (+1)',groupLabel:'Aritmanzia — Sigillo di Archimede',source:'Sigillo di Archimede',condition:'Studente · riuscita del Sigillo 33%',type:'possibilita',value:1,total:0,unlimited:true,stackGroup:'archimede',fatica:-0.5,destrezza:-2,note:'Si applica unicamente al lancio di Incantesimi.'},
+    archimede_s66_1:{label:'Sigillo di Archimede — Studente 66% · 1d2=1 (+1)',groupLabel:'Aritmanzia — Sigillo di Archimede',source:'Sigillo di Archimede',condition:'Studente · riuscita 66% · dado bonus 1d2 = 1',type:'possibilita',value:1,total:0,unlimited:true,stackGroup:'archimede',fatica:-0.5,destrezza:-2,note:'Si applica unicamente al lancio di Incantesimi.'},
+    archimede_s66_2:{label:'Sigillo di Archimede — Studente 66% · 1d2=2 (+2)',groupLabel:'Aritmanzia — Sigillo di Archimede',source:'Sigillo di Archimede',condition:'Studente · riuscita 66% · dado bonus 1d2 = 2',type:'possibilita',value:2,total:0,unlimited:true,stackGroup:'archimede',fatica:-0.5,destrezza:-2,note:'Si applica unicamente al lancio di Incantesimi.'},
+    archimede_s100:{label:'Sigillo di Archimede — Studente 100% (+2)',groupLabel:'Aritmanzia — Sigillo di Archimede',source:'Sigillo di Archimede',condition:'Studente · riuscita del Sigillo 100%',type:'possibilita',value:2,total:0,unlimited:true,stackGroup:'archimede',fatica:-0.5,destrezza:-2,note:'Si applica unicamente al lancio di Incantesimi.'},
+    archimede_a19:{label:'Sigillo di Archimede — Adulto Sapienza 1–19 (+3)',groupLabel:'Aritmanzia — Sigillo di Archimede',source:'Sigillo di Archimede',condition:'Adulto · Sapienza qualsiasi 1–19 · riuscita 100%',type:'possibilita',value:3,total:0,unlimited:true,stackGroup:'archimede',fatica:-0.5,destrezza:-2,note:'Si applica unicamente al lancio di Incantesimi.'},
+    archimede_a25:{label:'Sigillo di Archimede — Adulto Sapienza 20–25 (+4)',groupLabel:'Aritmanzia — Sigillo di Archimede',source:'Sigillo di Archimede',condition:'Adulto · Sapienza qualsiasi 20–25 · riuscita 100%',type:'possibilita',value:4,total:0,unlimited:true,stackGroup:'archimede',fatica:-0.5,destrezza:-2,note:'Si applica unicamente al lancio di Incantesimi.'},
+
+    storiografia_s33:{label:'Storiografia — Studente 33% (+1)',groupLabel:'Investigazione — Storiografia',source:'Storiografia',condition:'Solo in role di investigazione · Studente · riuscita 33%',type:'possibilita',value:1,total:0,unlimited:true,stackGroup:'storiografia',fatica:-5,note:'Bonus applicabile a un Incantesimo o a un’azione di investigazione.'},
+    storiografia_s66_1:{label:'Storiografia — Studente 66% · 1d2=1 (+1)',groupLabel:'Investigazione — Storiografia',source:'Storiografia',condition:'Solo in role di investigazione · Studente · riuscita 66% · 1d2=1',type:'possibilita',value:1,total:0,unlimited:true,stackGroup:'storiografia',fatica:-4,note:'Bonus applicabile a un Incantesimo o a un’azione di investigazione.'},
+    storiografia_s66_2:{label:'Storiografia — Studente 66% · 1d2=2 (+2)',groupLabel:'Investigazione — Storiografia',source:'Storiografia',condition:'Solo in role di investigazione · Studente · riuscita 66% · 1d2=2',type:'possibilita',value:2,total:0,unlimited:true,stackGroup:'storiografia',fatica:-4,note:'Bonus applicabile a un Incantesimo o a un’azione di investigazione.'},
+    storiografia_s100:{label:'Storiografia — Studente 100% (+2)',groupLabel:'Investigazione — Storiografia',source:'Storiografia',condition:'Solo in role di investigazione · Studente · riuscita 100%',type:'possibilita',value:2,total:0,unlimited:true,stackGroup:'storiografia',fatica:-3,note:'Bonus applicabile a un Incantesimo o a un’azione di investigazione.'},
+    storiografia_a0:{label:'Storiografia — Adulto senza Sapienza Arcaica (+2)',groupLabel:'Investigazione — Storiografia',source:'Storiografia',condition:'Solo in role di investigazione · Adulto senza Sapienza Arcaica · riuscita 100%',type:'possibilita',value:2,total:0,unlimited:true,stackGroup:'storiografia',fatica:-2,note:'Bonus applicabile a un Incantesimo o a un’azione di investigazione.'},
+    storiografia_a1:{label:'Storiografia — Adulto con Sapienza Arcaica 1+ (+3)',groupLabel:'Investigazione — Storiografia',source:'Storiografia',condition:'Solo in role di investigazione · Adulto con Sapienza Arcaica 1+ · riuscita 100%',type:'possibilita',value:3,total:0,unlimited:true,stackGroup:'storiografia',fatica:-1,note:'Bonus applicabile a un Incantesimo o a un’azione di investigazione.'}
+  };
+
+  var KNOWLEDGE_BONUS_UID = 0;
+
+  function kbNum(v, fallback){
+    var n = Number(v);
+    return isFinite(n) ? n : (fallback === undefined ? 0 : fallback);
+  }
+
+  function kbSigned(n){
+    n = kbNum(n,0);
+    return (n > 0 ? '+' : '') + String(n).replace('.',',');
+  }
+
+  function kbPresetOptions(){
+    var groups = {}, order = [];
+    Object.keys(KNOWLEDGE_BONUS_PRESETS).forEach(function(key){
+      var p = KNOWLEDGE_BONUS_PRESETS[key];
+      var group = p.groupLabel || 'Altro';
+      if (!groups[group]){ groups[group] = []; order.push(group); }
+      groups[group].push({key:key,p:p});
+    });
+    var html = '<option value="">Seleziona dal catalogo…</option>';
+    order.forEach(function(group){
+      html += '<optgroup label="' + escapeHtml(group) + '">';
+      groups[group].forEach(function(x){ html += '<option value="' + escapeHtml(x.key) + '">' + escapeHtml(x.p.label) + '</option>'; });
+      html += '</optgroup>';
+    });
+    html += '<optgroup label="Altro"><option value="manual">Altro bonus / effetto manuale</option></optgroup>';
+    return html;
+  }
+
+  function kbTypeLabel(type){
+    var labels = {
+      possibilita:'Bonus alle Possibilità', malusPossibilita:'Malus alle Possibilità',
+      minPct:'Riuscita minima', maxPct:'Riuscita massima', forza:'Modifica Forza',
+      destrezza:'Modifica Destrezza', fatica:'Modifica Fatica', parametro:'Modifica altro parametro', effetto:'Effetto speciale / informativo'
+    };
+    return labels[type] || 'Effetto';
+  }
+
+  function kbNormalizePct(v){
+    v = kbNum(v,0);
+    var tiers = [0,33,66,100], best = tiers[0], dist = Math.abs(v-tiers[0]);
+    for (var i=1;i<tiers.length;i++){
+      var d = Math.abs(v-tiers[i]); if (d < dist){ best = tiers[i]; dist = d; }
+    }
+    return best;
+  }
+
+  function kbManualEffect(row){
+    var type = (row.querySelector('[data-role="type"]')||{}).value || 'possibilita';
+    var value = kbNum((row.querySelector('[data-role="value"]')||{}).value,0);
+    var source = ((row.querySelector('[data-role="source"]')||{}).value || 'Bonus manuale').trim();
+    var condition = ((row.querySelector('[data-role="condition"]')||{}).value || '').trim();
+    var note = ((row.querySelector('[data-role="note"]')||{}).value || '').trim();
+    var total = Math.max(0,Math.floor(kbNum((row.querySelector('[data-role="total"]')||{}).value,0)));
+    return {label:source,source:source,condition:condition,note:note,type:type,value:value,total:total,unlimited:total===0,stackGroup:'',fatica:0,destrezza:0};
+  }
+
+  function kbRowEffect(row){
+    var key = row.dataset.presetKey || '';
+    if (key === 'manual'){ return kbManualEffect(row); }
+    var p = KNOWLEDGE_BONUS_PRESETS[key];
+    if (!p){ return null; }
+    return {label:p.label,source:p.source,condition:p.condition,note:p.note,type:p.type,value:kbNum(p.value,0),total:Math.max(0,Math.floor(kbNum(p.total,0))),unlimited:!!p.unlimited || !p.total,stackGroup:p.stackGroup||'',fatica:kbNum(p.fatica,0),destrezza:kbNum(p.destrezza,0)};
+  }
+
+  function kbEffectMainText(e){
+    if (!e){ return ''; }
+    var value = kbNum(e.value,0);
+    if (e.type === 'possibilita'){ return '+' + Math.abs(Math.round(value)) + ' Possibilità'; }
+    if (e.type === 'malusPossibilita'){ return '-' + Math.abs(Math.round(value)) + ' Possibilità'; }
+    if (e.type === 'minPct'){ return 'Riuscita minima ' + kbNormalizePct(value) + '%'; }
+    if (e.type === 'maxPct'){ return 'Riuscita massima ' + kbNormalizePct(value) + '%'; }
+    if (e.type === 'forza'){ return kbSigned(value) + '% Forza'; }
+    if (e.type === 'destrezza'){ return kbSigned(value) + ' Destrezza'; }
+    if (e.type === 'fatica'){ return kbSigned(value) + ' Fatica'; }
+    if (e.type === 'parametro'){ return kbSigned(value) + ' al parametro indicato'; }
+    return 'Effetto speciale / informativo';
+  }
+
+  function kbUpdateRow(row){
+    var key = (row.querySelector('[data-role="preset"]')||{}).value || '';
+    row.dataset.presetKey = key;
+    row.classList.toggle('is-manual', key === 'manual');
+    row.classList.toggle('has-preset', !!KNOWLEDGE_BONUS_PRESETS[key]);
+    var p = KNOWLEDGE_BONUS_PRESETS[key];
+    var summary = row.querySelector('.knowledge-bonus-compact-summary');
+    var note = row.querySelector('.knowledge-bonus-note');
+    var totalEl = row.querySelector('[data-role="total"]');
+    var usedEl = row.querySelector('[data-role="used"]');
+    var apply = row.querySelector('[data-role="apply"]');
+
+    if (p){
+      if (totalEl){ totalEl.value = p.unlimited ? '0' : String(p.total||0); }
+      var bits = [kbEffectMainText(p)];
+      if (kbNum(p.destrezza,0) !== 0){ bits.push(kbSigned(p.destrezza) + ' Destrezza'); }
+      if (kbNum(p.fatica,0) !== 0){ bits.push(kbSigned(p.fatica) + ' Fatica'); }
+      summary.innerHTML = '<strong>' + escapeHtml(p.source) + '</strong> — ' + escapeHtml(bits.join(' · ')) + (p.condition ? '<br><span>' + escapeHtml(p.condition) + '</span>' : '');
+      note.textContent = p.note || '';
+    } else if (key === 'manual'){
+      note.textContent = 'Per Possibilità e Malus inserisci un valore positivo: il segno viene applicato dal tipo di effetto. Per Forza, Destrezza, Fatica e altri parametri puoi usare anche valori negativi. Per Riuscita minima/massima usa 0, 33, 66 o 100.';
+    } else {
+      summary.innerHTML = '';
+      note.textContent = 'Seleziona un effetto dal catalogo oppure scegli «Altro bonus / effetto manuale».';
+    }
+
+    var total = Math.max(0,Math.floor(kbNum(totalEl && totalEl.value,0)));
+    var used = Math.max(0,Math.floor(kbNum(usedEl && usedEl.value,0)));
+    if (total > 0 && used > total){ used = total; if (usedEl) usedEl.value = String(used); }
+    var remaining = row.querySelector('.knowledge-bonus-remaining');
+    if (remaining){ remaining.textContent = total === 0 ? 'Usi: illimitati / non conteggiati' : (used + '/' + total + ' usi → ' + Math.max(0,total-used) + ' rimasti'); }
+    if (apply){ apply.disabled = !key || (total > 0 && used >= total && row.dataset.consumedCurrent !== '1'); if (apply.disabled){ apply.checked = false; } }
+  }
+
+  function kbCreateRow(data){
+    data = data || {}; KNOWLEDGE_BONUS_UID++;
+    var row = document.createElement('div');
+    row.className = 'knowledge-bonus-row'; row.dataset.uid = 'kb' + KNOWLEDGE_BONUS_UID; row.dataset.consumedCurrent = '0';
+    row.innerHTML = '<div class="knowledge-bonus-field knowledge-bonus-preset-wrap"><label>Oggetto / Conoscenza / Tecnica / Incantesimo</label><select data-role="preset">' + kbPresetOptions() + '</select></div>' +
+      '<div class="knowledge-bonus-compact-summary"></div>' +
+      '<div class="knowledge-bonus-manual-fields">' +
+        '<div class="knowledge-bonus-field"><label>Fonte</label><input type="text" data-role="source" maxlength="100" placeholder="Es. Oggetto o Conoscenza"></div>' +
+        '<div class="knowledge-bonus-field"><label>Quando si applica</label><input type="text" data-role="condition" maxlength="160" placeholder="Es. solo agli Incantesimi Offensivi"></div>' +
+        '<div class="knowledge-bonus-field"><label>Tipo di effetto</label><select data-role="type"><option value="possibilita">Bonus alle Possibilità</option><option value="malusPossibilita">Malus alle Possibilità</option><option value="minPct">Riuscita minima</option><option value="maxPct">Riuscita massima</option><option value="forza">Modifica Forza (%)</option><option value="destrezza">Modifica Destrezza</option><option value="fatica">Modifica Fatica</option><option value="parametro">Modifica altro parametro</option><option value="effetto">Effetto speciale / informativo</option></select></div>' +
+        '<div class="knowledge-bonus-field"><label>Valore</label><input type="number" data-role="value" value="0" step="0.5"></div>' +
+        '<div class="knowledge-bonus-field"><label>Usi totali (0 = illimitati)</label><input type="number" data-role="total" value="0" min="0" step="1"></div>' +
+        '<div class="knowledge-bonus-field"><label>Nota / dettaglio</label><input type="text" data-role="note" maxlength="180" placeholder="Es. non cumulabile con..."></div>' +
+      '</div>' +
+      '<div class="knowledge-bonus-action-row"><label class="knowledge-bonus-apply"><input type="checkbox" data-role="apply" checked> Applica a questo tiro</label><div class="knowledge-bonus-field knowledge-bonus-uses"><label>Usi consumati</label><input type="number" data-role="used" value="0" min="0" step="1"></div><div class="knowledge-bonus-remaining"></div><button type="button" class="knowledge-bonus-remove" title="Elimina bonus" aria-label="Elimina bonus">×</button></div>' +
+      '<div class="knowledge-bonus-note"></div>';
+    qs('knowledgeBonusList').appendChild(row);
+    var preset = row.querySelector('[data-role="preset"]');
+    preset.value = data.preset || '';
+    if (data.preset === 'manual'){
+      ['source','condition','type','value','total','used','note'].forEach(function(k){ var el=row.querySelector('[data-role="'+k+'"]'); if(el && data[k] !== undefined){ el.value=data[k]; } });
+    }
+    if (data.apply === false){ row.querySelector('[data-role="apply"]').checked = false; }
+    kbUpdateRow(row);
+
+    preset.addEventListener('change',function(){ row.dataset.consumedCurrent='0'; var used=row.querySelector('[data-role="used"]'); if(used)used.value='0'; kbUpdateRow(row); kbRefreshAll(); });
+    row.querySelector('[data-role="apply"]').addEventListener('change',function(){
+      if (!this.checked && row.dataset.consumedCurrent === '1'){
+        var used=row.querySelector('[data-role="used"]'); if(used){ used.value=String(Math.max(0,Math.floor(kbNum(used.value,0))-1)); }
+        row.dataset.consumedCurrent='0';
+      }
+      kbUpdateRow(row); kbRefreshAll();
+    });
+    row.querySelector('[data-role="used"]').addEventListener('input',function(){ kbUpdateRow(row); kbRefreshAll(); });
+    row.querySelector('[data-role="total"]').addEventListener('input',function(){ kbUpdateRow(row); kbRefreshAll(); });
+    row.querySelectorAll('.knowledge-bonus-manual-fields input,.knowledge-bonus-manual-fields select').forEach(function(el){
+      el.addEventListener('input',function(){ kbUpdateRow(row); kbRefreshAll(); });
+      el.addEventListener('change',function(){ kbUpdateRow(row); kbRefreshAll(); });
+    });
+    row.querySelector('.knowledge-bonus-remove').addEventListener('click',function(){ row.remove(); kbRefreshAll(); });
+    kbRefreshAll(); return row;
+  }
+
+  function kbAllRows(){ return Array.prototype.slice.call(qs('knowledgeBonusList').querySelectorAll('.knowledge-bonus-row')); }
+
+  function kbEffectiveEntries(){
+    var rows = kbAllRows(), plain = [], grouped = {};
+    rows.forEach(function(row){
+      var apply = row.querySelector('[data-role="apply"]'); if (!apply || !apply.checked || apply.disabled){ return; }
+      var e = kbRowEffect(row); if (!e){ return; }
+      var total = e.unlimited ? 0 : Math.max(0,Math.floor(kbNum((row.querySelector('[data-role="total"]')||{}).value,e.total||0)));
+      var used = Math.max(0,Math.floor(kbNum((row.querySelector('[data-role="used"]')||{}).value,0)));
+      if (total > 0 && used >= total && row.dataset.consumedCurrent !== '1'){ return; }
+      var entry = {row:row,e:e,total:total,used:used};
+      if (e.stackGroup){
+        var old = grouped[e.stackGroup];
+        var score = e.type === 'possibilita' ? Math.abs(kbNum(e.value,0)) : 1;
+        var oldScore = old ? (old.e.type === 'possibilita' ? Math.abs(kbNum(old.e.value,0)) : 1) : -1;
+        if (!old || score > oldScore){ grouped[e.stackGroup] = entry; }
+      } else { plain.push(entry); }
+    });
+    Object.keys(grouped).forEach(function(k){ plain.push(grouped[k]); });
+    return plain;
+  }
+
+  function kbAggregate(){
+    var out = {rollDelta:0,minPct:null,maxPct:null,entries:kbEffectiveEntries()};
+    out.entries.forEach(function(x){
+      var e=x.e, v=kbNum(e.value,0);
+      if (e.type === 'possibilita'){ out.rollDelta += Math.abs(Math.round(v)); }
+      else if (e.type === 'malusPossibilita'){ out.rollDelta -= Math.abs(Math.round(v)); }
+      else if (e.type === 'minPct'){ var mn=kbNormalizePct(v); out.minPct = out.minPct===null?mn:Math.max(out.minPct,mn); }
+      else if (e.type === 'maxPct'){ var mx=kbNormalizePct(v); out.maxPct = out.maxPct===null?mx:Math.min(out.maxPct,mx); }
+    });
+    if (out.rollDelta > 20){ out.rollDelta=20; }
+    if (out.rollDelta < -20){ out.rollDelta=-20; }
+    return out;
+  }
+
+  function kbApplyPctLimits(pct, agg){
+    if (agg.minPct !== null){ pct = Math.max(pct,agg.minPct); }
+    if (agg.maxPct !== null){ pct = Math.min(pct,agg.maxPct); }
+    return pct;
+  }
+
+  function kbConsumeCurrentUse(){
+    kbEffectiveEntries().forEach(function(x){
+      if (x.total <= 0 || x.row.dataset.consumedCurrent === '1'){ return; }
+      var used = x.row.querySelector('[data-role="used"]');
+      if (!used){ return; }
+      var n=Math.max(0,Math.floor(kbNum(used.value,0)));
+      if (n < x.total){ used.value=String(n+1); x.row.dataset.consumedCurrent='1'; kbUpdateRow(x.row); }
+    });
+  }
+
+  function kbResetCurrentMarkers(){ kbAllRows().forEach(function(row){ row.dataset.consumedCurrent='0'; kbUpdateRow(row); }); }
+
+  function kbSummaryText(e){
+    var parts=[kbEffectMainText(e)];
+    if (kbNum(e.destrezza,0)!==0){ parts.push(kbSigned(e.destrezza)+' Destrezza'); }
+    if (kbNum(e.fatica,0)!==0){ parts.push(kbSigned(e.fatica)+' Fatica'); }
+    if (e.condition){ parts.push(e.condition); }
+    if (e.note){ parts.push(e.note); }
+    return parts.join(' · ');
+  }
+
+  function kbRefreshActiveLine(){
+    var el=qs('activeBonusLine'); if(!el)return;
+    var agg=kbAggregate(), bits=[];
+    if (agg.rollDelta!==0){ bits.push('<strong>Modificatore al 1d10:</strong> '+escapeHtml(kbSigned(agg.rollDelta))); }
+    if (agg.minPct!==null){ bits.push('<strong>Riuscita minima:</strong> '+agg.minPct+'%'); }
+    if (agg.maxPct!==null){ bits.push('<strong>Riuscita massima:</strong> '+agg.maxPct+'%'); }
+    el.innerHTML=bits.join(' · ');
+  }
+
+  function kbRefreshAll(){
+    kbRefreshActiveLine();
+    refreshDiceCode();
+    refreshModifierSummary();
+    sendHeightSoon();
   }
 
   var searchActiveIndex = -1;
@@ -1304,6 +1934,131 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return '';
   }
 
+  function rollPurposeKey(entry, roll, context){
+    var c = cleanRollContext(context);
+    var f = String((roll && roll.formula) || '').replace(/\s+/g,'').toLowerCase();
+    var low = c.toLowerCase().replace(/\s+/g,' ');
+    var compact = low.replace(/\s+/g,'');
+    var idx = compact.indexOf(f);
+    if (idx !== -1){
+      /* Ricava la parte dopo la formula usando una ricerca più permissiva nel testo originale. */
+      var rawIdx = low.indexOf(String((roll && roll.formula) || '').toLowerCase().replace(/\s+/g,' '));
+      var tail = rawIdx !== -1 ? low.slice(rawIdx + String((roll && roll.formula) || '').length).trim() : '';
+      var after = tail.match(/^([a-zà-ÿ][a-zà-ÿ’' -]{0,40})/i);
+      if (after && after[1]){
+        var unit = after[1].replace(/\s+(?:—|se|per|con|e |oppure).*$/i,'').replace(/[.,;:].*$/,'').trim();
+        if (unit){ return 'qty:' + unit; }
+      }
+    }
+    var pseudo = {formula:roll.formula,contexts:[context]};
+    return 'label:' + deriveRollLabel(entry,pseudo).toLowerCase();
+  }
+
+  function expandRollCases(entry, roll){
+    var contexts = (roll && roll.contexts) || [];
+    if (!contexts.length){ return [roll]; }
+    var groups = {}, order = [];
+    for (var i=0;i<contexts.length;i++){
+      var key = rollPurposeKey(entry,roll,contexts[i]);
+      if (!groups[key]){ groups[key]={formula:roll.formula,contexts:[]}; order.push(key); }
+      groups[key].contexts.push(contexts[i]);
+    }
+    var out=[];
+    for (var j=0;j<order.length;j++){ out.push(groups[order[j]]); }
+    return out;
+  }
+
+  function contextConditionParts(context){
+    var c = cleanRollContext(context);
+    var low = c.toLowerCase();
+    var parts=[];
+    var audience='';
+    if (/pg studenti|lanciato da pg studenti|lanciata da pg studenti/.test(low)) audience='PG Studente';
+    else if (/pg adulti senza sapienza/.test(low)){
+      var m0=c.match(/PG Adulti senza Sapienza\s+([^—·:]+?)(?:\s+—|\s+-\s+\d+%|$)/i);
+      audience='PG Adulto senza Sapienza'+(m0&&m0[1]?' '+m0[1].trim():' affine');
+    } else if (/pg adulti con sapienza/.test(low)){
+      var m1=c.match(/PG Adulti con Sapienza\s+([^—·:]+?)(?:\s+—|\s+-\s+\d+%|$)/i);
+      audience='PG Adulto con Sapienza'+(m1&&m1[1]?' '+m1[1].trim():' affine');
+    } else if (/pg adulti/.test(low)) audience='PG Adulto';
+    if (audience){ parts.push(audience); }
+
+    var pm=c.match(/(?:^|—|\s)-?\s*(100|66|33|0)%\s*:/i);
+    if (!pm){ pm=c.match(/(?:riuscita|potenza|forza)[^0-9]{0,18}(100|66|33|0)%/i); }
+    if (pm){ parts.push('riuscita '+pm[1]+'%'); }
+
+    if (!parts.length){
+      if (/risch|ammal|contrae|contragg|perde il controllo/.test(low)) return 'Ogni volta che usi questa Conoscenza: è un tiro di rischio separato.';
+      return 'Quando si verifica la condizione descritta in questo riquadro.';
+    }
+    return parts.join(' · ');
+  }
+
+  function rollUseConditions(roll){
+    var contexts=(roll&&roll.contexts)||[], out=[];
+    for (var i=0;i<contexts.length;i++){
+      var s=contextConditionParts(contexts[i]);
+      if (s && out.indexOf(s)===-1)out.push(s);
+    }
+    return out;
+  }
+
+  function currentSapienzaMode(){
+    if (state.pg !== 'adulto') return null;
+    if (state.tipologia === 'avanzata'){
+      var lv=(qs('sapienzaAvanzataSelect')||{}).value||'';
+      if (!lv) return null;
+      return lv==='senza'?'senza':'con';
+    }
+    /* Per Extra serve anche alla riuscita; per Scolastiche serve solo a
+       filtrare le Specifiche aggiuntive che distinguono con/senza Sapienza. */
+    if (state.sapienzaExtra === 'con') return 'con';
+    if (state.sapienzaExtra === 'senza') return 'senza';
+    return null;
+  }
+
+  function contextMatchStatus(context){
+    var c=cleanRollContext(context), low=c.toLowerCase();
+    var hasSpecific=false, unknown=false;
+    if (/pg studenti|lanciato da pg studenti|lanciata da pg studenti/.test(low)){
+      hasSpecific=true;
+      if (!state.pg) unknown=true; else if (state.pg!=='studente') return false;
+    }
+    if (/pg adulti/.test(low)){
+      hasSpecific=true;
+      if (!state.pg) unknown=true; else if (state.pg!=='adulto') return false;
+    }
+    if (/pg adulti senza sapienza/.test(low)){
+      hasSpecific=true; var sm=currentSapienzaMode();
+      if (sm===null) unknown=true; else if (sm!=='senza') return false;
+    }
+    if (/pg adulti con sapienza/.test(low)){
+      hasSpecific=true; var sm2=currentSapienzaMode();
+      if (sm2===null) unknown=true; else if (sm2!=='con') return false;
+    }
+    var pm=c.match(/(?:^|—|\s)-?\s*(100|66|33|0)%\s*:/i);
+    if (!pm){ pm=c.match(/(?:riuscita|potenza|forza)[^0-9]{0,18}(100|66|33|0)%/i); }
+    if (pm){
+      hasSpecific=true;
+      if (state.lastPct===null || typeof state.lastPct==='undefined') unknown=true;
+      else if (Number(pm[1])!==Number(state.lastPct)) return false;
+    }
+    if (!hasSpecific) return true;
+    return unknown ? null : true;
+  }
+
+  function rollMatchStatus(roll){
+    var contexts=(roll&&roll.contexts)||[];
+    if (!contexts.length) return null;
+    var sawUnknown=false;
+    for (var i=0;i<contexts.length;i++){
+      var s=contextMatchStatus(contexts[i]);
+      if (s===true) return true;
+      if (s===null) sawUnknown=true;
+    }
+    return sawUnknown?null:false;
+  }
+
   function rollPresentation(entry, roll){
     return {
       label: deriveRollLabel(entry, roll),
@@ -1322,7 +2077,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function makeAutoRollItem(entry, roll){
     var p = rollPresentation(entry, roll);
     var item = document.createElement('div');
-    item.className = 'auto-roll-item';
+    var match = rollMatchStatus(roll);
+    item.className = 'auto-roll-item' + (match===true?' auto-roll-current':(match===false?' auto-roll-not-current':''));
 
     var formula = document.createElement('span');
     formula.className = 'auto-roll-formula';
@@ -1332,10 +2088,32 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var info = document.createElement('div');
     info.className = 'auto-roll-info';
 
+    if (match === true){
+      var yes=document.createElement('span');
+      yes.className='auto-roll-current-badge';
+      yes.textContent='Questo è il dado da usare';
+      info.appendChild(yes);
+    } else if (match === false && state.lastPct !== null){
+      var no=document.createElement('span');
+      no.className='auto-roll-skip-badge';
+      no.textContent='Non serve con le scelte attuali';
+      info.appendChild(no);
+    }
+
     var label = document.createElement('strong');
     label.className = 'auto-roll-semantic-label';
     label.textContent = p.label;
     info.appendChild(label);
+
+    var use=document.createElement('span');
+    use.className='auto-roll-use';
+    var conds=rollUseConditions(roll);
+    if (conds.length===1){
+      use.innerHTML='<strong>Quando usarlo:</strong> '+escapeHtml(conds[0]);
+    } else {
+      use.innerHTML='<strong>Quando usarlo:</strong><br>• '+conds.map(escapeHtml).join('<br>• ');
+    }
+    info.appendChild(use);
 
     if (p.quote){
       var q = document.createElement('div');
@@ -1345,7 +2123,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     } else {
       var direct = document.createElement('span');
       direct.className = 'auto-roll-direct-note';
-      direct.textContent = 'Il numero ottenuto è direttamente il risultato del tiro.';
+      direct.textContent = 'Il numero ottenuto è direttamente il risultato del tiro: non devi consultare una tabella di esiti.';
       info.appendChild(direct);
     }
 
@@ -1362,15 +2140,214 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return item;
   }
 
+  function rulePlainText(fragment){
+    var x=String(fragment||'')
+      .replace(/\[URL=[^\]]+\]([\s\S]*?)\[\/URL\]/gi,'$1')
+      .replace(/\[URL[^\]]*\]/gi,'').replace(/\[\/URL\]/gi,'')
+      .replace(/\[IMG[^\]]*\][\s\S]*?\[\/IMG\]/gi,'')
+      .replace(/<br\s*\/?>/gi,'\n')
+      .replace(/<\/(?:div|p|li|tr|h1|h2|h3|h4)>/gi,'\n')
+      .replace(/<[^>]+>/g,'');
+    var ta=document.createElement('textarea'); ta.innerHTML=x; x=ta.value;
+    return x.replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ').replace(/\n[ \t]+/g,'\n').trim();
+  }
+
+  function ruleAudienceKey(label){
+    var low=String(label||'').toLowerCase();
+    if (/pg\s+studenti/.test(low)) return 'studente';
+    if (/pg\s+adulti\s+senza\s+sapienza/.test(low)) return 'adulto-senza';
+    if (/pg\s+adulti\s+con\s+sapienza/.test(low)) return 'adulto-con';
+    if (/pg\s+adulti/.test(low)) return 'adulto';
+    return '';
+  }
+
+  function parseRuleOutcomeLines(bodyText){
+    var lines=String(bodyText||'').split(/\n+/), intro=[], outcomes=[];
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i].replace(/^\s*[•·]\s*/,'').trim();
+      if(!line) continue;
+      var m=line.match(/^[-–—]?\s*((?:0|33|66|100)(?:\s*[-–]\s*(?:33|66|100))?)%\s*:\s*(.+)$/i);
+      if(m){
+        var value=m[2].trim();
+        var compact=value.replace(/\s+/g,'');
+        var dm=compact.match(/(?:^|\+)(\d+\+)?(\d*)d(\d+)(?:\+(\d+))?/i);
+        var formula='';
+        if(dm){
+          var token=dm[0].replace(/^\+/,'');
+          formula=normalizeDiceFormula(token);
+        }
+        outcomes.push({pct:m[1].replace(/\s+/g,''),value:value,formula:formula,raw:line});
+      } else if(!/^Specifiche$/i.test(line)){
+        intro.push(line);
+      }
+    }
+    return {intro:intro.join(' '),outcomes:outcomes};
+  }
+
+  function extractAudienceRuleBlocks(entry){
+    if(!entry||!entry.html) return [];
+    var raw=String(entry.html), details=[], dre=/<details\b[^>]*>([\s\S]*?)<\/details>/gi, dm;
+    while((dm=dre.exec(raw))!==null){ details.push(dm[1]); }
+    if(!details.length){ details=[raw]; }
+    var blocks=[];
+    for(var d=0;d<details.length;d++){
+      var part=details[d], markers=[], re=/<(b|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, m, heading='';
+      while((m=re.exec(part))!==null){
+        var tag=m[1].toLowerCase(), text=rulePlainText(m[2]);
+        if(tag==='b'){
+          heading=/^Specifiche$/i.test(text)?'':text;
+          markers.push({type:'heading',start:m.index,end:re.lastIndex,text:heading});
+        } else {
+          var key=ruleAudienceKey(text);
+          if(key){ markers.push({type:'audience',start:m.index,end:re.lastIndex,label:text,key:key,heading:heading}); }
+        }
+      }
+      for(var i=0;i<markers.length;i++){
+        var mk=markers[i]; if(mk.type!=='audience') continue;
+        var end=part.length;
+        for(var j=i+1;j<markers.length;j++){ if(markers[j].start>mk.start){ end=markers[j].start; break; } }
+        var parsed=parseRuleOutcomeLines(rulePlainText(part.slice(mk.end,end)));
+        if(parsed.outcomes.length){ blocks.push({heading:mk.heading,label:mk.label,key:mk.key,intro:parsed.intro,outcomes:parsed.outcomes}); }
+      }
+    }
+    return blocks;
+  }
+
+  function entryNeedsAdultSapChoice(entry){
+    var blocks=extractAudienceRuleBlocks(entry), hasNo=false,hasYes=false;
+    for(var i=0;i<blocks.length;i++){ if(blocks[i].key==='adulto-senza')hasNo=true; if(blocks[i].key==='adulto-con')hasYes=true; }
+    return hasNo&&hasYes;
+  }
+
+  function selectedAudienceRuleKey(entry){
+    if(state.pg==='studente') return 'studente';
+    if(state.pg!=='adulto') return '';
+    var blocks=extractAudienceRuleBlocks(entry), needs=entryNeedsAdultSapChoice(entry), sm=currentSapienzaMode();
+    if(needs){
+      if(sm==='con') return 'adulto-con';
+      if(sm==='senza') return 'adulto-senza';
+      return '';
+    }
+    for(var i=0;i<blocks.length;i++){ if(blocks[i].key==='adulto') return 'adulto'; }
+    return sm==='con'?'adulto-con':(sm==='senza'?'adulto-senza':'adulto');
+  }
+
+  function diceParts(formula){
+    var f=normalizeDiceFormula(formula),m=f.match(/^(?:(\d+)\+)?(\d*)d(\d+)(?:\+(\d+))?$/i);
+    if(!m)return null;
+    return {before:m[1]?parseInt(m[1],10):0,n:m[2]?parseInt(m[2],10):1,faces:parseInt(m[3],10),after:m[4]?parseInt(m[4],10):0};
+  }
+
+  function ruleResultKey(entry,block,row){
+    return [entry&&entry.name||'',block.heading||'',block.key||'',row.pct||'',row.formula||''].join('|');
+  }
+
+  function replaceFormulaWithResolved(value,formula,total){
+    var compact=normalizeDiceFormula(formula), pattern=compact.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var re=new RegExp(pattern.replace(/\\\+/g,'\\s*\\+\\s*'),'i');
+    var out=String(value||'').replace(re,String(total));
+    return out;
+  }
+
+  function splitOutcomeAroundFormula(value,formula){
+    var raw=String(value||''), compact=normalizeDiceFormula(formula), pattern=compact.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var re=new RegExp(pattern.replace(/\\\+/g,'\\s*\\+\\s*'),'i'),m=re.exec(raw);
+    if(!m)return {before:'',after:raw};
+    var before=raw.slice(0,m.index).trim(),after=raw.slice(m.index+m[0].length).trim();
+    if(before==='+')before='';
+    return {before:before,after:after};
+  }
+
+  function makeRuleOutcomeRow(entry,block,row){
+    var line=document.createElement('div'); line.className='rule-outcome-row';
+    var pct=document.createElement('div'); pct.className='rule-outcome-pct'; pct.textContent=row.pct+'%:'; line.appendChild(pct);
+    var value=document.createElement('div'); value.className='rule-outcome-value';
+    if(!row.formula){ value.textContent=row.value; line.appendChild(value); return line; }
+
+    var dline=document.createElement('div'); dline.className='rule-dice-line';
+    var aff=splitOutcomeAroundFormula(row.value,row.formula);
+    if(aff.before){ var pre=document.createElement('span'); pre.className='rule-dice-affix'; pre.textContent=aff.before; dline.appendChild(pre); }
+    var formula=document.createElement('span'); formula.className='rule-dice-chip'; formula.textContent=(row.value.trim().charAt(0)==='+'?'+':'')+row.formula.toUpperCase(); dline.appendChild(formula);
+    var copy=document.createElement('button'); copy.type='button'; copy.className='rule-dice-copy'; copy.textContent='Copia dado';
+    copy.addEventListener('cli'+'ck',function(){
+      var pseudo={formula:row.formula,contexts:[block.label+' — '+row.raw]};
+      copyTextWithFeedback(buildAutoExtraCode(entry,pseudo),copy,'Copia il dado qui sotto:');
+    });
+    dline.appendChild(copy);
+    if(aff.after){ var post=document.createElement('span'); post.className='rule-dice-affix'; post.textContent=aff.after; dline.appendChild(post); }
+
+    var parts=diceParts(row.formula), key=ruleResultKey(entry,block,row);
+    if(parts){
+      var rw=document.createElement('span'); rw.className='rule-dice-result-wrap';
+      var lab=document.createElement('label'); lab.textContent='Risultato dado'; rw.appendChild(lab);
+      var inp=document.createElement('input'); inp.type='number'; inp.className='rule-dice-result'; inp.min=String(parts.n); inp.max=String(parts.n*parts.faces); inp.step='1'; inp.placeholder=parts.n+'–'+(parts.n*parts.faces);
+      if(state.extraRollResults[key]!==undefined) inp.value=state.extraRollResults[key];
+      rw.appendChild(inp);
+      var paste=document.createElement('button'); paste.type='button'; paste.className='rule-dice-paste'; paste.textContent='Incolla risultato';
+      paste.addEventListener('cli'+'ck',function(){
+        var applyText=function(txt){ var mm=String(txt||'').match(/-?\d+/); if(mm){ inp.value=mm[0]; inp.dispatchEvent(new Event('input',{bubbles:true})); } else { inp.focus(); } };
+        if(navigator.clipboard&&navigator.clipboard.readText){ navigator.clipboard.readText().then(applyText).catch(function(){ inp.focus(); }); } else { inp.focus(); }
+      });
+      rw.appendChild(paste); dline.appendChild(rw);
+      var resolved=document.createElement('span'); resolved.className='rule-dice-resolved'; dline.appendChild(resolved);
+      var update=function(){
+        var v=parseInt(inp.value,10);
+        if(isNaN(v)){ delete state.extraRollResults[key]; resolved.textContent=''; return; }
+        if(v<parts.n||v>parts.n*parts.faces){ resolved.textContent='Risultato non valido'; return; }
+        state.extraRollResults[key]=v;
+        var total=parts.before+v+parts.after;
+        resolved.textContent='→ '+replaceFormulaWithResolved(row.value,row.formula,total);
+        sendHeightSoon();
+      };
+      inp.addEventListener('input',update); inp.addEventListener('change',update); update();
+    }
+    value.appendChild(dline); line.appendChild(value); return line;
+  }
+
+  function makeAudienceRuleBlock(entry,block){
+    var box=document.createElement('div'); box.className='rule-audience-block';
+    if(block.heading){ var h=document.createElement('div'); h.className='rule-group-title'; h.textContent=block.heading; box.appendChild(h); }
+    var a=document.createElement('div'); a.className='rule-audience-title'; a.textContent=block.label; box.appendChild(a);
+    if(block.intro){ var intro=document.createElement('div'); intro.className='rule-audience-intro'; intro.textContent=block.intro; box.appendChild(intro); }
+    var rows=document.createElement('div'); rows.className='rule-outcomes';
+    for(var i=0;i<block.outcomes.length;i++){ rows.appendChild(makeRuleOutcomeRow(entry,block,block.outcomes[i])); }
+    box.appendChild(rows); return box;
+  }
+
   function renderAutoExtraRolls(entry){
-    var wrap = qs('autoDadiExtraWrap');
-    var list = qs('dadoExtraList');
-    list.innerHTML = '';
-    var rolls = entry && entry.extraRolls ? entry.extraRolls : [];
-    if (!rolls.length){ wrap.className = 'hidden'; sendHeightSoon(); return; }
-    for (var i=0; i<rolls.length; i++){ list.appendChild(makeAutoRollItem(entry, rolls[i])); }
-    wrap.className = '';
-    sendHeightSoon();
+    var wrap=qs('autoDadiExtraWrap'),list=qs('dadoExtraList'); list.innerHTML='';
+    var blocks=extractAudienceRuleBlocks(entry),rolls=entry&&entry.extraRolls?entry.extraRolls:[];
+    if(!blocks.length&&!rolls.length){ wrap.className='card hidden'; sendHeightSoon(); return; }
+
+    var formulasInAudience={};
+    for(var bi=0;bi<blocks.length;bi++)for(var oi=0;oi<blocks[bi].outcomes.length;oi++)if(blocks[bi].outcomes[oi].formula)formulasInAudience[normalizeDiceFormula(blocks[bi].outcomes[oi].formula)]=true;
+
+    if(blocks.length){
+      if(!state.pg){
+        var p=document.createElement('div'); p.className='rule-context-prompt'; p.innerHTML='<b>Prima indica chi usa la Conoscenza.</b><br>Appena scegli PG Studente o PG Adulto, qui comparirà soltanto la parte delle Specifiche che ti riguarda.'; list.appendChild(p);
+      } else if(state.pg==='adulto'&&entryNeedsAdultSapChoice(entry)&&currentSapienzaMode()===null){
+        var p2=document.createElement('div'); p2.className='rule-context-prompt'; p2.innerHTML='<b>Indica se il PG possiede la Sapienza affine.</b><br>Serve solo per scegliere automaticamente il blocco corretto delle Specifiche.'; list.appendChild(p2);
+      } else {
+        var key=selectedAudienceRuleKey(entry),shown=0;
+        for(var b=0;b<blocks.length;b++){ if(blocks[b].key===key||(key==='adulto'&&blocks[b].key==='adulto')){ list.appendChild(makeAudienceRuleBlock(entry,blocks[b])); shown++; } }
+        if(!shown){
+          var p3=document.createElement('div'); p3.className='rule-context-prompt'; p3.textContent='Per le scelte attuali non risultano effetti aggiuntivi differenziati nelle Specifiche.'; list.appendChild(p3);
+        }
+      }
+    }
+
+    var extraNodes=[];
+    for(var i=0;i<rolls.length;i++){
+      if(formulasInAudience[normalizeDiceFormula(rolls[i].formula)]) continue;
+      var cases=expandRollCases(entry,rolls[i]);
+      for(var j=0;j<cases.length;j++){ extraNodes.push(makeAutoRollItem(entry,cases[j])); }
+    }
+    if(extraNodes.length){
+      var ht=document.createElement('div'); ht.className='rule-unconditional-title'; ht.textContent=blocks.length?'Altri tiri previsti':'Tiri extra previsti dal regolamento'; list.appendChild(ht);
+      for(var x=0;x<extraNodes.length;x++)list.appendChild(extraNodes[x]);
+    }
+
+    wrap.className='card'; sendHeightSoon();
   }
 
   var TAG_LABELS = {
@@ -1479,6 +2456,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function selectConoscenza(entry){
     if (!entry){ return; }
     state.selectedEntry = entry;
+    state.lastPct = null;
     qs('searchInput').value = entry.name;
     hideSearchSuggestions();
 
@@ -1496,17 +2474,20 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       state.sapienzaExtra = null;
       refreshVisibility();
       renderAutoExtraRolls(entry);
+      mzBridgeUpdateCard(entry);
+      erbBridgeUpdateCard(entry);
       refreshModifierSummary();
       sendHeightSoon();
       return;
     }
 
     qs('schedaBox').innerHTML = renderKnowledgeReference(entry);
-    renderAutoExtraRolls(entry);
-
     qs('nomeConoscenza').value = entry.name;
     state.tipologia = entry.tipologia;
     refreshVisibility();
+    renderAutoExtraRolls(entry);
+    mzBridgeUpdateCard(entry);
+    erbBridgeUpdateCard(entry);
     refreshModifierSummary();
     sendHeightSoon();
   }
@@ -1516,10 +2497,15 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (!exact && state.selectedEntry){
       state.selectedEntry = null;
       state.tipologia = null;
+      state.lastPct = null;
       qs('schedaCard').className = 'card hidden';
-      qs('autoDadiExtraWrap').className = 'hidden';
+      qs('autoDadiExtraWrap').className = 'card hidden';
       qs('dadoExtraList').innerHTML = '';
       qs('modifiersCard').className = 'card hidden';
+      qs('magizoologiaBridgeCard').className = 'card hidden';
+      qs('magizoologiaBridgeBody').innerHTML = '';
+      qs('erbologiaBridgeCard').className = 'card hidden';
+      qs('erbologiaBridgeBody').innerHTML = '';
       refreshVisibility();
       refreshModifierSummary();
       sendHeightSoon();
@@ -1587,28 +2573,38 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   wireGrid('pgGrid', function(v){
     state.pg = v;
+    state.lastPct = null;
     setActive('pgGrid', v);
     refreshVisibility();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
   });
 
   wireGrid('sapienzaExtraGrid', function(v){
     state.sapienzaExtra = v;
+    state.lastPct = null;
     setActive('sapienzaExtraGrid', v);
     refreshTabella();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
   });
 
   qs('votoSelect').addEventListener('change', function(){
+    state.lastPct = null;
     updateVotoNote();
     refreshTabella();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
   });
-  qs('sapienzaAvanzataSelect').addEventListener('change', refreshTabella);
+  qs('sapienzaAvanzataSelect').addEventListener('change', function(){
+    state.lastPct = null;
+    refreshTabella();
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
+  });
 
-  var codeInputs = ['nomePg','nomeConoscenza','linkRole','bonusInput'];
+  var codeInputs = ['nomePg','nomeConoscenza','linkRole'];
   for (var ci=0; ci<codeInputs.length; ci++){
     qs(codeInputs[ci]).addEventListener('input', refreshDiceCode);
   }
-  qs('bonusInput').addEventListener('input', refreshModifierSummary);
   qs('nomeConoscenza').addEventListener('input', refreshModifierSummary);
+  qs('addKnowledgeBonus').addEventListener('click', function(){ kbCreateRow({}); });
 
   function updateVotoNote(){
     var v = qs('votoSelect').value;
@@ -1632,8 +2628,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
        precedente: la sola scelta eliminata è la Tipologia manuale. */
     qs('pgCard').className = 'card';
     qs('detailsCard').className = 'card';
-    qs('resultCard').className = 'card';
-    qs('bonusRowField').className = '';
+    qs('resultCard').className = 'card hidden';
+    qs('bonusRowField').className = 'knowledge-bonus-manager';
 
     /* Finché non viene scelta una Conoscenza, il PG e i dettagli possono
        comunque essere compilati; le sezioni specifiche dipendenti dalla
@@ -1646,7 +2642,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (state.tipologia === 'autoconclusiva'){
       qs('autoconclusivaCard').className = 'card';
       qs('pgCard').className = 'card hidden';
-      qs('bonusRowField').className = 'hidden';
+      qs('bonusRowField').className = 'knowledge-bonus-manager hidden';
       refreshTabella();
       return;
     }
@@ -1658,6 +2654,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (state.pg === 'adulto'){
       if (state.tipologia === 'scolastica'){
         qs('adultoScolasticaCard').className = 'card';
+        if (entryNeedsAdultSapChoice(state.selectedEntry)){ qs('adultoExtraCard').className = 'card'; }
       }
       if (state.tipologia === 'extra'){
         qs('adultoExtraCard').className = 'card';
@@ -1766,25 +2763,39 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   function buildModifierData(){
     var items = [];
+    var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
+    if (!nomeCon){ nomeCon = 'Conoscenza'; }
+    items.push({kind:'knowledge', label:'Conoscenza', text:nomeCon});
+
     if (state.selectedEntry){
       var fatigue = getFatigueValues();
-      for (var f=0;f<fatigue.length;f++){
-        items.push({kind:'fatigue', label:'Fatica', text:fatigue[f]});
-      }
-      var bonuses = getExplicitTexts('.bonus');
-      for (var b=0;b<bonuses.length;b++){
-        items.push({kind:'bonus', label:'Bonus specifico', text:bonuses[b]});
-      }
-      var risks = getExplicitTexts('.medi');
-      for (var r=0;r<risks.length;r++){
-        items.push({kind:'risk', label:'Rischio / malus', text:risks[r]});
+      if (fatigue.length){
+        for (var f=0;f<fatigue.length;f++){
+          items.push({kind:'fatigue', label:'Fatica consumata', text:fatigue[f]});
+        }
       }
     }
-    var canUseRollMod = !!state.tipologia && state.tipologia !== 'autoconclusiva';
-    var rollMod = canUseRollMod ? guardFormula(qs('bonusInput').value) : 0;
-    if (rollMod !== 0){
-      var sign = rollMod > 0 ? '+' : '';
-      items.push({kind:'roll', label:'Modificatore al tiro', text:sign + rollMod + ' da Oggetto o Conoscenza'});
+
+    var effective = kbEffectiveEntries();
+    for (var i=0;i<effective.length;i++){
+      var x=effective[i], e=x.e, effectBits=[];
+      effectBits.push(kbEffectMainText(e));
+      if (kbNum(e.destrezza,0)!==0){ effectBits.push(kbSigned(e.destrezza)+' Destrezza'); }
+      if (kbNum(e.fatica,0)!==0){ effectBits.push(kbSigned(e.fatica)+' Fatica'); }
+      items.push({
+        kind:(e.type==='malusPossibilita'||kbNum(e.value,0)<0?'risk':'roll'),
+        label:'Bonus / malus — '+(e.source||e.label||'Effetto applicato'),
+        text:effectBits.join(' · ')
+      });
+
+      if (x.total > 0){
+        var usedEl=x.row.querySelector('[data-role="used"]');
+        var used=Math.max(0,Math.floor(kbNum(usedEl&&usedEl.value,x.used||0)));
+        var remaining=Math.max(0,x.total-used);
+        var current=x.row.dataset.consumedCurrent==='1';
+        var useText=(current?'1 uso consumato con questo utilizzo · ':'')+used+'/'+x.total+' consumati · '+remaining+' rimasti';
+        items.push({kind:'usage',label:'Usi — '+(e.source||e.label||'Oggetto / effetto'),text:useText});
+      }
     }
     return items;
   }
@@ -1792,23 +2803,20 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function buildModifierCopyText(items){
     var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
     if (!nomeCon){ nomeCon = 'Conoscenza'; }
-    var lines = ['[b]Riepilogo bonus / malus — ' + nomeCon + '[/b]'];
-    if (!items.length){
-      lines.push('Nessun bonus o malus esplicito rilevato.');
-    } else {
-      for (var i=0;i<items.length;i++){
-        lines.push('• [b]' + items[i].label + ':[/b] ' + items[i].text);
-      }
+    var lines = ['<b>' + nomeCon + '</b>'];
+    for (var i=0;i<items.length;i++){
+      if (items[i].kind === 'knowledge'){ continue; }
+      lines.push('• <b>' + items[i].label + ':</b> ' + items[i].text);
     }
+    if (lines.length === 1){ lines.push('• Nessun costo o modificatore da registrare.'); }
     return lines.join('\n');
   }
 
   function refreshModifierSummary(){
     var card = qs('modifiersCard');
     var hasKnowledge = !!state.selectedEntry;
-    var canUseRollMod = !!state.tipologia && state.tipologia !== 'autoconclusiva';
-    var rollMod = canUseRollMod ? guardFormula(qs('bonusInput').value) : 0;
-    if (!hasKnowledge && rollMod === 0){
+    var hasActiveBonus = kbAggregate().entries.length > 0;
+    if (!hasKnowledge && !hasActiveBonus){
       card.className = 'card hidden';
       qs('modifierSummary').innerHTML = '';
       qs('modifierCodeBox').value = '';
@@ -1818,7 +2826,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var items = buildModifierData();
     var html = '';
     if (!items.length){
-      html = '<div class="modifier-item"><strong>Nessun modificatore esplicito</strong><br>La scheda non indica bonus, malus o costi di Fatica da riepilogare automaticamente.</div>';
+      html = '<div class="modifier-item"><strong>Nessun dato da registrare</strong><br>Non risultano costi, modificatori o usi da riepilogare.</div>';
     } else {
       for (var i=0;i<items.length;i++){
         html += '<div class="modifier-item mod-' + items[i].kind + '"><strong>' + escapeHtml(items[i].label) + ':</strong> ' + escapeHtml(items[i].text).replace(/\n/g,'<br>') + '</div>';
@@ -1848,14 +2856,45 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     copyTextWithFeedback(qs('modifierCodeBox').value, qs('copyModifiersBtn'), 'Copia il riepilogo qui sotto:');
   });
 
-  function buildEsitiText(table){
-    var lines = [];
-    for (var i=0;i<table.length;i++){
-      var lo = table[i][0], hi = table[i][1], pct = table[i][2];
-      var label = (lo === hi) ? String(lo) : (lo + '-' + hi);
-      lines.push(label + ': ' + pct + '%');
+  function effectiveOutcomeRanges(table, agg){
+    agg=agg||kbAggregate();
+    var rows=[];
+    for(var raw=1;raw<=10;raw++){
+      var total=raw+agg.rollDelta;
+      if(total<1){total=1;} if(total>10){total=10;}
+      var pct=kbApplyPctLimits(percentFromValue(table,total),agg);
+      var last=rows.length?rows[rows.length-1]:null;
+      if(last&&last.pct===pct&&last.hi===raw-1){ last.hi=raw; }
+      else{ rows.push({lo:raw,hi:raw,pct:pct}); }
     }
+    return rows;
+  }
+
+  function buildEsitiText(table){
+    var agg=kbAggregate(), rows=effectiveOutcomeRanges(table,agg), lines=[];
+    for(var i=0;i<rows.length;i++){
+      var label=(rows[i].lo===rows[i].hi)?String(rows[i].lo):(rows[i].lo+'-'+rows[i].hi);
+      lines.push(label+': '+rows[i].pct+'%');
+    }
+    if(agg.rollDelta!==0){ lines.push('Fasce già calcolate con modificatore '+kbSigned(agg.rollDelta)+'.'); }
+    if(agg.minPct!==null){ lines.push('Riuscita minima applicata: '+agg.minPct+'%'); }
+    if(agg.maxPct!==null){ lines.push('Riuscita massima applicata: '+agg.maxPct+'%'); }
     return lines.join('\n');
+  }
+
+  function renderInlineOutcomeLegend(table){
+    var box=qs('inlineOutcomeLegend');
+    if(!box){ return; }
+    if(!table || table==='AUTO'){ box.className='inline-outcome-legend hidden'; box.innerHTML=''; return; }
+    var agg=kbAggregate(), rows=effectiveOutcomeRanges(table,agg), html='<strong>Esito immediato del dado sul forum</strong><div class="inline-outcome-chips">';
+    for(var i=0;i<rows.length;i++){
+      var range=(rows[i].lo===rows[i].hi)?String(rows[i].lo):(rows[i].lo+'–'+rows[i].hi);
+      html+='<span class="inline-outcome-chip"><b>'+range+'</b> → '+rows[i].pct+'%</span>';
+    }
+    html+='</div><div class="inline-outcome-note">Le fasce qui sopra leggono direttamente il numero uscito sul forum';
+    if(agg.rollDelta!==0){ html+=' e includono già il modificatore '+escapeHtml(kbSigned(agg.rollDelta)); }
+    html+='. Non devi riportare il risultato in questo tool.</div>';
+    box.innerHTML=html; box.className='inline-outcome-legend';
   }
 
   function buildDiceCode(){
@@ -1873,11 +2912,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         esiti = buildEsitiText(table);
       }
     }
-    var bonus = guardFormula(qs('bonusInput').value);
-    if (bonus !== 0){
-      var sign = bonus > 0 ? '+' : '';
-      esiti = esiti + '\nModificatore da sommare al risultato: ' + sign + bonus;
-    }
+    var agg = kbAggregate();
+    var bonus = agg.rollDelta;
     var code = '<b>' + nomePg + ' - ' + nomeCon + ' (<u>' + tipologiaLabel + '</u>)- [url=' + link + ']Linkrole[/url]</b>\n';
     code = code + '[quote]' + esiti + '[/quote]\n\n';
     code = code + '[dice=1d10]';
@@ -1886,22 +2922,24 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   function refreshDiceCode(){
     var table = getActiveTable();
+    qs('pasteCard').className = 'card hidden';
+    qs('resultCard').className = 'card hidden';
     if (table){
       if (table === 'AUTO'){
         qs('autoActionWrap').className = '';
         qs('diceActionWrap').className = 'hidden';
-        qs('pasteCard').className = 'card hidden';
+        renderInlineOutcomeLegend(null);
         return;
       }
       qs('autoActionWrap').className = 'hidden';
       qs('diceActionWrap').className = '';
-      qs('pasteCard').className = 'card';
       qs('diceCodeBox').value = buildDiceCode();
+      renderInlineOutcomeLegend(table);
       return;
     }
     qs('autoActionWrap').className = 'hidden';
     qs('diceActionWrap').className = 'hidden';
-    qs('pasteCard').className = 'card hidden';
+    renderInlineOutcomeLegend(null);
   }
 
   function percentFromValue(table, value){
@@ -1946,37 +2984,49 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var nomePg = qs('nomePg').value;
     var nomeCon = qs('nomeConoscenza').value;
 
+    qs('resultCard').className = 'card hidden';
     qs('emptyResult').className = 'empty-result hidden';
-    qs('resultBody').className = 'result';
+    qs('resultBody').className = 'result hidden';
     qs('dieValue').textContent = '—';
     qs('totalValue').textContent = '—';
     qs('bonusRow').textContent = '';
     var autoBadge = qs('pctBadge');
     autoBadge.className = 'pct-badge pct-100';
     autoBadge.textContent = '100%';
+    state.lastPct = 100;
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
     qs('flavorText').textContent = AUTO_FLAVOR;
     qs('timestamp').textContent = 'Registrato alle ' + stamp;
 
-    var autoLog = '[b]Riuscita Conoscenza[/b]' + '\n';
+    var autoLog = '<b>Riuscita Conoscenza</b>' + '\n';
     if (nomePg){ autoLog += 'PG: ' + nomePg + '\n'; }
     if (nomeCon){ autoLog += 'Conoscenza: ' + nomeCon + '\n'; }
     autoLog += 'Conoscenza Autoconclusiva: nessun tiro necessario → Riuscita 100%\n';
     autoLog += '[i]' + stamp + '[/i]';
     lastLog = autoLog;
+    kbConsumeCurrentUse();
     refreshModifierSummary();
+    kbRefreshActiveLine();
+    mzBridgePublishResult(100,0,0,0);
+    erbBridgePublishResult(100,0,0,0);
     sendHeightSoon();
   });
 
   qs('copyCodeBtn').addEventListener('cli'+'ck', function(){
     var code = qs('diceCodeBox').value;
     if (!code){ return; }
+    /* Copiare il dado equivale a preparare l'utilizzo nel post: gli eventuali
+       oggetti/effetti a usi limitati vengono consumati una sola volta. */
+    kbConsumeCurrentUse();
+    refreshModifierSummary();
+    kbRefreshActiveLine();
     var showFallback = true;
     if (navigator.clipboard){
       if (navigator.clipboard.writeText){
         navigator.clipboard.writeText(code).then(function(){
           var btn = qs('copyCodeBtn');
           var original = btn.textContent;
-          btn.textContent = 'Copiato!';
+          btn.textContent = 'Copiato! Uso registrato';
           setTimeout(function(){ btn.textContent = original; }, 1500);
         });
         showFallback = false;
@@ -1989,58 +3039,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   });
 
   qs('calcBtn').addEventListener('cli'+'ck', function(){
-    var table = getActiveTable();
-    if (!table){ return; }
-    if (table === 'AUTO'){ return; }
-
-    var raw = qs('risultatoInput').value;
-    var n = parseInt(raw, 10);
-    if (isNaN(n)){
-      alert('Inserisci il numero uscito dal tiro [dice=1d10] sul forum (1-10).');
-      return;
-    }
-    if (n < 1){ n = 1; }
-    if (n > 10){ n = 10; }
-
-    var bonus = guardFormula(qs('bonusInput').value);
-    var total = n + bonus;
-    if (total < 1){ total = 1; }
-    if (total > 10){ total = 10; }
-    var pct = percentFromValue(table, total);
-    var stamp = nowStamp();
-
-    qs('emptyResult').className = 'empty-result hidden';
-    qs('resultBody').className = 'result';
-    qs('dieValue').textContent = n;
-    qs('totalValue').textContent = total;
-    var bonusRow = qs('bonusRow');
-    if (bonus !== 0){
-      var sign = bonus > 0 ? '+' : '';
-      bonusRow.textContent = (bonus > 0 ? 'Bonus ' : 'Malus ') + sign + bonus;
-    } else {
-      bonusRow.textContent = '';
-    }
-    var badge = qs('pctBadge');
-    badge.className = 'pct-badge pct-' + pct;
-    badge.textContent = pct + '%';
-    qs('flavorText').textContent = FLAVORS[pct];
-    qs('timestamp').textContent = 'Calcolato alle ' + stamp;
-
-    var nomePg = qs('nomePg').value;
-    var nomeCon = qs('nomeConoscenza').value;
-    var log = '[b]Riuscita Conoscenza[/b]' + '\n';
-    if (nomePg){ log += 'PG: ' + nomePg + '\n'; }
-    if (nomeCon){ log += 'Conoscenza: ' + nomeCon + '\n'; }
-    log += 'Risultato dado: ' + n;
-    if (bonus !== 0){
-      var sign2 = bonus > 0 ? '+' : '';
-      log += ' ' + sign2 + bonus + ' = ' + total;
-    }
-    log += ' → Riuscita ' + pct + '%\n';
-    log += '[i]' + stamp + '[/i]';
-    lastLog = log;
-    refreshModifierSummary();
-    sendHeightSoon();
+    /* v20: il risultato del 1d10 resta sul forum e non viene più reinserito qui. */
+    return;
   });
 
   qs('copyBtn').addEventListener('cli'+'ck', function(){
@@ -2065,14 +3065,17 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   qs('resetBtn').addEventListener('cli'+'ck', function(){
     qs('resultBody').className = 'result hidden';
     qs('emptyResult').className = 'empty-result';
-    qs('bonusInput').value = 0;
     qs('risultatoInput').value = '';
+    state.lastPct = null;
+    if (state.selectedEntry){ renderAutoExtraRolls(state.selectedEntry); }
+    kbResetCurrentMarkers();
     refreshDiceCode();
     refreshModifierSummary();
+    kbRefreshActiveLine();
     sendHeightSoon();
   });
 
-  /* ===== ALTEZZA IFRAME — misura solo il contenuto reale, non il viewport ===== */
+  /* ===== ALTEZZA IFRAME — stabile, senza feedback dal resize del parent ===== */
   var lastSentHeight = 0;
   var heightSeq = 0;
 
@@ -2083,20 +3086,21 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
     var bodyStyle = window.getComputedStyle(body);
     var paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
-    var rect = wrap.getBoundingClientRect();
 
     /*
-      NON usare body.scrollHeight / documentElement.scrollHeight qui:
-      dentro un iframe possono coincidere con l'altezza del viewport e
-      creare un ciclo infinito iframe -> resize -> altezza maggiore.
+      offsetTop + offsetHeight dipendono solo dal contenuto reale del tool.
+      Non leggiamo scrollHeight, viewport o getBoundingClientRect: così
+      l'altezza dell'iframe impostata dal parent non può rientrare nel calcolo.
     */
-    return Math.ceil(rect.bottom + window.pageYOffset + paddingBottom + 2);
+    return Math.ceil((wrap.offsetTop || 0) + (wrap.offsetHeight || 0) + paddingBottom + 4);
   }
 
-  function sendHeight(){
+  function sendHeight(force){
     if (window.parent === window){ return; }
     var height = getRealDocumentHeight();
-    if (height > 0 && Math.abs(height - lastSentHeight) > 1){
+    if (height <= 0){ return; }
+
+    if (force || Math.abs(height - lastSentHeight) > 2){
       lastSentHeight = height;
       heightSeq += 1;
       window.parent.postMessage({
@@ -2107,41 +3111,46 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }
   }
 
-  var heightTimers = [];
+  var heightTimer = null;
   function sendHeightSoon(){
-    while (heightTimers.length){ clearTimeout(heightTimers.pop()); }
-    sendHeight();
-    heightTimers.push(setTimeout(sendHeight, 60));
-    heightTimers.push(setTimeout(sendHeight, 220));
-    heightTimers.push(setTimeout(sendHeight, 500));
+    if (heightTimer){ clearTimeout(heightTimer); }
+    heightTimer = setTimeout(function(){
+      heightTimer = null;
+      sendHeight(false);
+    }, 40);
   }
 
-  window.addEventListener('load', sendHeightSoon);
-  window.addEventListener('resize', sendHeightSoon);
+  window.addEventListener('load', function(){
+    sendHeight(true);
+    setTimeout(function(){ sendHeight(true); }, 150);
+    setTimeout(function(){ sendHeight(true); }, 500);
+  });
   document.addEventListener('toggle', sendHeightSoon, true);
 
   var observedRoot = document.querySelector('.wrap');
   if (window.ResizeObserver && observedRoot){
-    var resizeObserver = new ResizeObserver(sendHeightSoon);
+    var resizeObserver = new ResizeObserver(function(){
+      sendHeightSoon();
+    });
     resizeObserver.observe(observedRoot);
   }
-  if (window.MutationObserver && observedRoot){
-    var mutationObserver = new MutationObserver(sendHeightSoon);
-    mutationObserver.observe(observedRoot, {childList:true, subtree:true, attributes:true, characterData:true});
-  }
+
   if (document.fonts && document.fonts.ready){
-    document.fonts.ready.then(sendHeightSoon);
+    document.fonts.ready.then(function(){ sendHeight(true); });
   }
 
   refreshVisibility();
+  kbRefreshActiveLine();
   refreshModifierSummary();
+  mzBridgeRestoreRequest();
+  erbBridgeRestoreRequest();
   sendHeightSoon();
 
 })();
 </script>
 
 <script>
-/* v15 — ritorno contestuale: query diretta oppure passaggio via localStorage tra tool GitHub incorporati in ForumFree. */
+/* v23 — ritorno contestuale: conserva tutte le funzioni v22 e aggiunge il rientro esatto al tool di provenienza. */
 (function(){
   'use strict';
   var from='',raw='';
@@ -2174,8 +3183,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   var isM=from==='magizoologia';
   link.href=u.href;
   label.textContent=isM?'Torna alla Guida alla Magizoologia':'Torna alla Guida all’Erbologia';
-  if(text)text.textContent='Quando hai determinato la riuscita, puoi tornare al tool da cui sei arrivato senza doverlo cercare di nuovo.';
+  if(text)text.textContent='Quando hai finito qui, puoi tornare esattamente al tool da cui sei arrivato, mantenendo la sessione aperta.';
   card.classList.remove('hidden');
+  try{ if(typeof sendHeightSoon==='function')sendHeightSoon(); }catch(e){}
 })();
 </script>
 
