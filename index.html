@@ -1252,6 +1252,40 @@
   .force-target-effects{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
   .force-target-effect{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf6;}
   .force-target-effect b{color:var(--maroon-deep);font-size:17px;}
+
+  /* ===== v32 — BERSAGLI MULTIPLI ===== */
+  .force-multi-manager{
+    margin-top:14px;
+    padding:13px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:rgba(255,253,246,.72);
+  }
+  .force-multi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .force-multi-title{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--maroon-deep);letter-spacing:.03em;}
+  .force-multi-note{margin:3px 0 0;color:#6b5638;font-size:13px;line-height:1.4;}
+  .force-target-count-buttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+  .force-target-count-btn{
+    min-width:36px;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:6px;
+    background:#efe0bb;color:var(--ink);font-family:Georgia,'Times New Roman',serif;font-weight:700;cursor:pointer;
+  }
+  .force-target-count-btn:hover{border-color:var(--maroon);}
+  .force-target-count-btn.active{background:var(--maroon);border-color:var(--maroon-deep);color:#fff8e8;}
+  .force-target-list{display:grid;gap:10px;margin-top:12px;}
+  .force-target-card{border:1px solid var(--line);border-radius:8px;background:#fffaf0;padding:11px 12px;}
+  .force-target-card.is-missed{opacity:.70;background:rgba(233,217,172,.38);}
+  .force-target-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;}
+  .force-target-card-title{font-family:'magic',Georgia,'Times New Roman',serif;font-size:19px;color:var(--maroon-deep);}
+  .force-target-card-status{font-size:11px;color:#735c3f;}
+  .force-target-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 10px;}
+  .force-target-fields .force-field.full{grid-column:1 / -1;}
+  .force-target-result{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);}
+  .force-target-result-empty{font-size:13px;color:#735c3f;font-style:italic;}
+  .force-target-result.missed{color:#735c3f;}
+  .force-target-summary{margin:10px 0 0;padding:8px 10px;border-left:4px solid var(--gold);background:rgba(201,162,39,.08);font-size:12.5px;line-height:1.4;color:#5a4630;}
+  .force-ardor-budget{margin-top:9px;padding:8px 10px;border:1px dashed var(--line);border-radius:6px;background:rgba(137,44,15,.05);font-size:12.5px;line-height:1.4;color:#5a4630;}
+  .force-ardor-budget.warn{border-color:var(--maroon);color:var(--maroon-deep);font-weight:700;}
+  @media(max-width:700px){.force-target-fields{grid-template-columns:1fr;}.force-target-fields .force-field.full{grid-column:auto;}}
   .combat-tools-card details{border:1px solid var(--line);border-radius:9px;background:rgba(255,251,238,.6);margin-top:10px;overflow:hidden;}
   .combat-tools-card summary{cursor:pointer;padding:12px 14px;font-family:'Cinzel',serif;color:var(--maroon-deep);font-weight:700;}
   .combat-tools-body{padding:0 14px 14px;}
@@ -1478,15 +1512,28 @@
             <option value="5">Livello 5</option>
           </select>
         </div>
-        <div class="force-field">
+        <div class="force-field" id="forceSingleResistanceField">
           <label for="forceTargetResistance">Resistenza del bersaglio <span class="force-status-tag">facoltativa</span></label>
           <input type="number" id="forceTargetResistance" min="0.1" step="0.5" inputmode="decimal" placeholder="Solo se vuoi calcolare danni/malus">
         </div>
-        <div class="force-field">
+        <div class="force-field" id="forceSingleHealthField">
           <label for="forceTargetHealth">Salute totale del bersaglio <span class="force-status-tag">necessaria per % e Sintomi</span></label>
           <input type="number" id="forceTargetHealth" min="1" step="1" inputmode="numeric" placeholder="Es. 75 Punti Salute">
         </div>
       </div>
+
+      <div class="force-multi-manager hidden" id="forceMultiTargetManager">
+        <div class="force-multi-head">
+          <div>
+            <div class="force-multi-title" id="forceMultiTargetTitle">Bersagli dell’azione</div>
+            <p class="force-multi-note" id="forceMultiTargetNote"></p>
+          </div>
+        </div>
+        <div class="force-target-count-buttons" id="forceTargetCountButtons"></div>
+        <div class="force-ardor-budget hidden" id="forceArdorBudget"></div>
+        <div class="force-target-list" id="forceTargetList"></div>
+      </div>
+
       <p class="note">Inserisci solo numeri e usa i valori già comprensivi di eventuali bonus/malus del PG. La Fatica attuale viene rapportata alla Fatica totale; sotto il 10% il moltiplicatore resta comunque 0,1. La Resistenza serve per calcolare il danno/malus sul bersaglio. <strong>Se l’Incantesimo toglie Salute, inserisci anche la Salute totale del bersaglio:</strong> nello stesso risultato compariranno automaticamente Punti Salute persi, percentuale di Salute persa, fascia medimagica e Sintomi associati a quell’Incantesimo. Quando i Sintomi sono determinabili compare anche il collegamento per trasferirli al tool del San Mungo come dati OFFGame.</p>
       <div class="force-result-panel" id="forceResultPanel">
         <p class="force-result-empty" id="forceResultEmpty">Completa i valori del PG e seleziona la fascia di riuscita.</p>
@@ -1662,7 +1709,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     scolastica:'Scolastica', extra:'Extra', avanzata:'Avanzata'
   };
 
-  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null, extraRollResults:{} };
+  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null, extraRollResults:{}, forceTargets:{signature:'',count:1,items:[]} };
 
   function qs(id){ return document.getElementById(id); }
   function escapeHtml(value){
@@ -3464,7 +3511,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     medStoreSanMungoBridge(el.getAttribute('data-ffmed')||'');
   },true);
 
-  function medSanMungoPayload(type,cause,healthLost,healthTotal,pct,symptoms){
+  function medSanMungoPayload(type,cause,healthLost,healthTotal,pct,symptoms,targetLabel){
     return {
       v:1,
       source:'riuscita-conoscenze',
@@ -3473,29 +3520,30 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       healthLost:Math.max(0,Math.round(Number(healthLost)||0)),
       healthTotal:Math.max(0,Math.round(Number(healthTotal)||0)),
       healthPct:Math.max(0,Number(pct)||0),
+      targetName:String(targetLabel||''),
       symptoms:(symptoms||[]).map(function(s){return {n:String(s.name||''),c:String(s.class||'')};})
     };
   }
 
-  function medSanMungoBridgeHtml(type,cause,healthLost,healthTotal,pct,symptoms){
+  function medSanMungoBridgeHtml(type,cause,healthLost,healthTotal,pct,symptoms,targetLabel){
     var list=(symptoms||[]).filter(function(s){return s&&s.name&&/^X{1,5}$/.test(String(s.class||''));});
     var direct='<a class="medical-action-link secondary" href="'+SAN_MUNGO_URL+'" target="_blank" rel="noopener"><i class="fa-solid fa-hospital" aria-hidden="true"></i> Apri il San Mungo</a>';
     if(!list.length){
       return '<div class="medical-actions">'+direct+'</div>';
     }
-    var payload=medSanMungoPayload(type,cause,healthLost,healthTotal,pct,list);
+    var payload=medSanMungoPayload(type,cause,healthLost,healthTotal,pct,list,targetLabel);
     var encoded=encodeURIComponent(JSON.stringify(payload));
     var href=SAN_MUNGO_URL+'#ffmed='+encoded;
     return '<div class="medical-transfer-note"><strong>Importazione per praticità OFFGame.</strong> I Sintomi possono essere trasferiti alla cartella del San Mungo, ma questo <strong>non significa che il PG li abbia riconosciuti ONGame</strong>. Se la cura richiede una Guarigione Attiva, i Sintomi devono comunque essere individuati attraverso la Diagnosi prevista dal regolamento.</div>'+
-      '<div class="medical-actions"><a class="medical-action-link" data-ffmed="'+escapeHtml(encoded)+'" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> Apri e importa nel San Mungo</a>'+direct+'</div>';
+      '<div class="medical-actions"><a class="medical-action-link" data-ffmed="'+escapeHtml(encoded)+'" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> '+(targetLabel?'Importa '+escapeHtml(targetLabel)+' nel San Mungo':'Apri e importa nel San Mungo')+'</a>'+direct+'</div>';
   }
 
-  function medBuildResult(type,causeName,healthLost,healthTotal){
+  function medBuildResult(type,causeName,healthLost,healthTotal,targetLabel){
     if(!(healthTotal>0) || !(healthLost>=0))return {html:'',copy:'',pct:null};
     var applied=Math.min(Math.max(0,healthLost),healthTotal);
     var pct=healthTotal>0?(applied/healthTotal*100):0;
     if(!(applied>0)){
-      return {html:'<div class="medical-result"><div class="medical-result-title"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Conseguenze medimagiche</div><div class="medical-result-line"><strong>Salute persa:</strong> 0 / '+escapeHtml(forceFmt(healthTotal,0))+' (0%)</div><div class="medical-result-line"><strong>Sintomi da curare:</strong> nessuno.</div>'+medSanMungoBridgeHtml(type,null,0,healthTotal,0,[])+'</div>',copy:'Salute persa: 0/'+forceFmt(healthTotal,0)+' (0%) · Sintomi: nessuno',pct:0};
+      return {html:'<div class="medical-result"><div class="medical-result-title"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Conseguenze medimagiche</div><div class="medical-result-line"><strong>Salute persa:</strong> 0 / '+escapeHtml(forceFmt(healthTotal,0))+' (0%)</div><div class="medical-result-line"><strong>Sintomi da curare:</strong> nessuno.</div>'+medSanMungoBridgeHtml(type,null,0,healthTotal,0,[],targetLabel)+'</div>',copy:'Salute persa: 0/'+forceFmt(healthTotal,0)+' (0%) · Sintomi: nessuno',pct:0};
     }
     var cause=medFindCause(type,causeName), row=cause?medMatchRange(cause,pct):null;
     var pctText=forceFmt(pct,2)+'%';
@@ -3522,7 +3570,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }else if(causeName){
       html+='<div class="medical-warning">Nessuna tabella dei Sintomi trovata per «'+escapeHtml(causeName)+'» fra '+escapeHtml(type==='incantesimo'?'Incantesimi':type==='creatura'?'Creature':type==='pozione'?'Pozioni':'Piante')+'.</div>';
     }
-    html+=medSanMungoBridgeHtml(type,cause,applied,healthTotal,pct,symptoms);
+    html+=medSanMungoBridgeHtml(type,cause,applied,healthTotal,pct,symptoms,targetLabel);
     html+='</div>';
     return {html:html,copy:copy,pct:pct,cause:cause,row:row,symptoms:symptoms};
   }
@@ -3582,6 +3630,189 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     ['plantMedicalCause','plantHealthLost','plantTargetHealth'].forEach(function(id){var el=qs(id);if(!el)return;el.addEventListener('input',refreshPlantMedical);el.addEventListener('change',refreshPlantMedical);});
   }
 
+  function forceCurrentHasAffineSapienza(){
+    if(state.pg!=='adulto')return false;
+    var sap=forceNumInput('forceSapienzaTotal');
+    if(sap!==null && sap>0)return true;
+    if(state.sapienzaExtra==='con')return true;
+    var adv=qs('sapienzaAvanzataSelect');
+    return !!(adv && adv.value && adv.value!=='senza');
+  }
+
+  function forcePctLineMatches(line,pct){
+    var t=String(line||'').replace(/,/g,'.');
+    if(new RegExp('(?:^|\\D)'+pct+'\\s*%').test(t))return true;
+    var ranges=t.match(/(\\d+)\\s*%?\\s*[-–/]\\s*(\\d+)\\s*%/g)||[];
+    for(var i=0;i<ranges.length;i++){
+      var m=ranges[i].match(/(\\d+)\\s*%?\\s*[-–/]\\s*(\\d+)\\s*%/);
+      if(m && pct>=Number(m[1]) && pct<=Number(m[2]))return true;
+    }
+    return false;
+  }
+
+  function forceAudienceKind(line){
+    var l=String(line||'').toLowerCase();
+    if(/pg stud/.test(l))return 'studente';
+    if(/pg adult/.test(l) && /senza sapienza/.test(l))return 'adulto-senza';
+    if(/pg adult/.test(l) && /con sapienza/.test(l))return 'adulto-con';
+    return '';
+  }
+
+  function forceMaxTargetsForCurrentContext(entry,pct){
+    if(!entry || pct===null || pct===undefined || pct<=0)return 1;
+    var lines=entryTextLines(entry), wanted=state.pg==='studente'?'studente':(forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza');
+    var best=1, audience='';
+    for(var i=0;i<lines.length;i++){
+      var k=forceAudienceKind(lines[i]); if(k){audience=k;continue;}
+      if(audience!==wanted)continue;
+      var line=lines[i];
+      if(!/bersagli?/i.test(line) || !forcePctLineMatches(line,pct))continue;
+      var m=line.match(/(?:max(?:imo)?\\s*)?(\\d+)\\s*bersagli?/i);
+      if(!m)m=line.match(/max(?:imo)?\\s*(\\d+)/i);
+      if(m)best=Math.max(best,Number(m[1])||1);
+    }
+    return Math.max(1,Math.min(12,best));
+  }
+
+  function forceTargetStateEnsure(maxTargets){
+    if(!state.forceTargets)state.forceTargets={signature:'',count:1,items:[]};
+    var entryName=cleanKnowledgeName(state.selectedEntry&&state.selectedEntry.name||'');
+    var sig=[entryName,state.pg||'',state.lastPct===null?'':state.lastPct,forceCurrentHasAffineSapienza()?'sap':'nosap',maxTargets].join('|');
+    if(state.forceTargets.signature!==sig){
+      state.forceTargets={signature:sig,count:1,items:[]};
+    }
+    state.forceTargets.count=Math.max(1,Math.min(maxTargets,Number(state.forceTargets.count)||1));
+    while(state.forceTargets.items.length<state.forceTargets.count){
+      state.forceTargets.items.push({name:'',hit:'hit',resistance:'',health:'',projectiles:1,hits:1});
+    }
+    if(state.forceTargets.items.length>state.forceTargets.count){state.forceTargets.items.length=state.forceTargets.count;}
+    return state.forceTargets;
+  }
+
+  function forceIsArdorConvergence(maxTargets){
+    var n=cleanKnowledgeName(state.selectedEntry&&state.selectedEntry.name||'').toLowerCase();
+    var sap=forceNumInput('forceSapienzaTotal')||0;
+    return n==='ardor' && sap>=25 && maxTargets>1;
+  }
+
+  function forceTargetLabel(item,index){
+    var n=String(item&&item.name||'').trim();
+    return n || ('Bersaglio '+(index+1));
+  }
+
+  function forceRenderMultiTargetManager(maxTargets){
+    var manager=qs('forceMultiTargetManager'), singleR=qs('forceSingleResistanceField'), singleH=qs('forceSingleHealthField');
+    if(!manager)return false;
+    var multi=maxTargets>1;
+    manager.classList.toggle('hidden',!multi);
+    if(singleR)singleR.classList.toggle('hidden',multi);
+    if(singleH)singleH.classList.toggle('hidden',multi);
+    if(!multi)return false;
+    var ft=forceTargetStateEnsure(maxTargets), ardor=forceIsArdorConvergence(maxTargets);
+    qs('forceMultiTargetTitle').textContent='Bersagli dell’azione · massimo '+maxTargets;
+    qs('forceMultiTargetNote').innerHTML='Scegli quanti bersagli distinti prendi di mira. Ogni bersaglio ha Resistenza, Salute ed esito propri; soltanto quelli colpiti producono danni e Sintomi esportabili.'+(ardor?' <strong>Ardor con Sapienza Offensiva 25:</strong> puoi distribuire fino a '+maxTargets+' proiettili tra i bersagli e indicare quanti vanno effettivamente a segno.':'');
+    var buttons='';
+    for(var i=1;i<=maxTargets;i++)buttons+='<button type="button" class="force-target-count-btn'+(i===ft.count?' active':'')+'" data-force-target-count="'+i+'">'+i+'</button>';
+    qs('forceTargetCountButtons').innerHTML=buttons;
+    var targetList=qs('forceTargetList');
+    var structureKey=ft.signature+'|'+ft.count+'|'+(ardor?'ardor':'standard');
+    if(targetList.dataset.structureKey!==structureKey){
+      var list='';
+      for(var j=0;j<ft.count;j++){
+        var it=ft.items[j], label=forceTargetLabel(it,j), missed=!ardor && it.hit==='miss';
+        list+='<div class="force-target-card'+(missed?' is-missed':'')+'" data-force-target-index="'+j+'">'+
+          '<div class="force-target-card-head"><div class="force-target-card-title">'+escapeHtml(label)+'</div><div class="force-target-card-status">'+(ardor?'gestione proiettili':'esito individuale')+'</div></div>'+
+          '<div class="force-target-fields">'+
+            '<div class="force-field full"><label>Nome del bersaglio <span class="force-status-tag">facoltativo</span></label><input type="text" data-ft-field="name" value="'+escapeHtml(it.name||'')+'" placeholder="Es. Harry Potter"></div>'+
+            (ardor
+              ? '<div class="force-field"><label>Proiettili indirizzati</label><input type="number" data-ft-field="projectiles" min="1" max="'+maxTargets+'" step="1" value="'+Math.max(1,Number(it.projectiles)||1)+'"></div><div class="force-field"><label>Proiettili andati a segno</label><input type="number" data-ft-field="hits" min="0" max="'+Math.max(1,Number(it.projectiles)||1)+'" step="1" value="'+Math.max(0,Number(it.hits)||0)+'"></div>'
+              : '<div class="force-field full"><label>Esito sul bersaglio</label><select data-ft-field="hit"><option value="hit"'+(it.hit!=='miss'?' selected':'')+'>Colpito</option><option value="miss"'+(it.hit==='miss'?' selected':'')+'>Non colpito / si difende</option></select></div>')+
+            '<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
+            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'+
+          '</div><div class="force-target-result" data-ft-result="'+j+'"></div></div>';
+      }
+      targetList.innerHTML=list;
+      targetList.dataset.structureKey=structureKey;
+    }
+    var budget=qs('forceArdorBudget');
+    if(budget){
+      if(ardor){budget.classList.remove('hidden');}else{budget.className='force-ardor-budget hidden';budget.innerHTML='';}
+    }
+    return true;
+  }
+
+  function forceSyncTargetStateFromDom(target){
+    var card=target&&target.closest?target.closest('[data-force-target-index]'):null;
+    if(!card || !state.forceTargets)return;
+    var idx=Number(card.getAttribute('data-force-target-index'));
+    var item=state.forceTargets.items[idx]; if(!item)return;
+    var field=target.getAttribute('data-ft-field'); if(!field)return;
+    item[field]=target.value;
+    if(field==='name'){
+      var title=card.querySelector('.force-target-card-title'); if(title)title.textContent=forceTargetLabel(item,idx);
+    }
+    if(field==='hit'){
+      card.classList.toggle('is-missed',item.hit==='miss');
+    }
+    if(field==='projectiles'){
+      var p=Math.max(1,Math.floor(Number(item.projectiles)||1)); item.projectiles=p;
+      var hits=card.querySelector('[data-ft-field="hits"]');
+      if(hits){hits.max=String(p); if(Number(hits.value)>p){hits.value=String(p);item.hits=p;}}
+    }
+  }
+
+  function forceBindMultiTargetManager(){
+    var manager=qs('forceMultiTargetManager'); if(!manager)return;
+    manager.addEventListener('click',function(ev){
+      var b=ev.target.closest&&ev.target.closest('[data-force-target-count]'); if(!b)return;
+      state.forceTargets.count=Number(b.getAttribute('data-force-target-count'))||1;
+      refreshForceCard(); refreshModifierSummary();
+    });
+    manager.addEventListener('input',function(ev){forceSyncTargetStateFromDom(ev.target);refreshForceCard();refreshModifierSummary();});
+    manager.addEventListener('change',function(ev){forceSyncTargetStateFromDom(ev.target);refreshForceCard();refreshModifierSummary();});
+  }
+
+  function forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell){
+    var ft=state.forceTargets, ardor=forceIsArdorConvergence(maxTargets), totalAssigned=0, htmlCopy=[];
+    if(!ft)return;
+    if(ardor){
+      for(var z=0;z<ft.items.length;z++)totalAssigned+=Math.max(1,Math.floor(Number(ft.items[z].projectiles)||1));
+      var budget=qs('forceArdorBudget');
+      if(budget){
+        budget.className='force-ardor-budget'+(totalAssigned>maxTargets?' warn':'');
+        budget.innerHTML='<strong>Proiettili distribuiti:</strong> '+totalAssigned+' / '+maxTargets+(totalAssigned>maxTargets?' — riduci l’assegnazione prima di considerare valido il calcolo.':'')+' <span class="muted">· con più bersagli, ricorda anche la Fatica aggiuntiva prevista dalle Specifiche di Ardor.</span>';
+      }
+    }
+    for(var i=0;i<ft.items.length;i++){
+      var item=ft.items[i], box=qs('forceTargetList')&&qs('forceTargetList').querySelector('[data-ft-result="'+i+'"]');
+      if(!box)continue;
+      var label=forceTargetLabel(item,i);
+      var hitCount=ardor?Math.max(0,Math.min(Math.max(1,Math.floor(Number(item.projectiles)||1)),Math.floor(Number(item.hits)||0))):(item.hit==='miss'?0:1);
+      if(hitCount<=0){
+        box.className='force-target-result missed';
+        box.innerHTML='<div class="force-target-result-empty"><strong>'+escapeHtml(label)+':</strong> nessun colpo va a segno. Nessun danno o Sintomo da esportare.</div>';
+        htmlCopy.push(label+': non colpito');
+        continue;
+      }
+      var resistance=Number(item.resistance);
+      if(!(resistance>0)){
+        box.className='force-target-result';box.innerHTML='<div class="force-target-result-empty">Inserisci la Resistenza di '+escapeHtml(label)+' per calcolare l’effetto.</div>';continue;
+      }
+      var rawEffect=Math.pow(Math.max(0,baseNumerator/resistance),.6);
+      var health=Math.round(rawEffect)*hitCount, other=Math.round(rawEffect/5)*hitCount;
+      var effect=buildTargetEffectHtml(targetInfo,health,other,null), med={html:'',copy:''};
+      var hTotal=Number(item.health);
+      if(isDamagingSpell){
+        if(hTotal>0){med=medBuildResult('incantesimo',state.selectedEntry.name,health,hTotal,label);}
+        else{med.html='<div class="medical-needed-prompt"><strong>Per i Sintomi di '+escapeHtml(label)+':</strong> il colpo causa <strong>-'+escapeHtml(forceFmt(health,0))+' Punti Salute</strong>. Inserisci la Salute totale del bersaglio.</div>';}
+      }
+      box.className='force-target-result';
+      box.innerHTML='<div class="force-target-title">Effetto su '+escapeHtml(label)+(ardor&&hitCount>1?' · '+hitCount+' proiettili a segno':'')+'</div>'+effect.html+med.html;
+      htmlCopy.push(label+': '+effect.copy+(med.copy?' · '+med.copy:''));
+    }
+    var dmgBox=qs('forceDamageBox'); if(dmgBox)dmgBox.dataset.copyText=htmlCopy.join(' | ');
+  }
+
   function refreshForceCard(){
     var card=qs('forceCard'); if(!card){ return; }
     if(!state.selectedEntry){ card.className='card hidden'; return; }
@@ -3639,8 +3870,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if(sap===null){ sap=0; }
     sap=Math.max(0,Math.min(25,sap));
     var adv=state.tipologia==='avanzata'?Number(qs('forceAdvancedLevel').value||1):1;
-    var resistance=forceNumInput('forceTargetResistance');
-    var targetHealthTotal=forceNumInput('forceTargetHealth');
+    var maxTargets=forceMaxTargetsForCurrentContext(state.selectedEntry,pct);
+    var isMultiTargets=forceRenderMultiTargetManager(maxTargets);
+    var resistance=isMultiTargets?null:forceNumInput('forceTargetResistance');
+    var targetHealthTotal=isMultiTargets?null:forceNumInput('forceTargetHealth');
     var empty=qs('forceResultEmpty'), body=qs('forceResultBody');
 
     var missing=[];
@@ -3678,21 +3911,25 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     qs('forceBreakdown').innerHTML=pieces.join(' · ');
 
     var dmgBox=qs('forceDamageBox');
-    if(resistance!==null && resistance>0){
-      var numerator=param*base*fatigueFactor*skillFactor*successFactor*externalForceFactor;
-      var rawEffect=Math.pow(Math.max(0,numerator/resistance),.6);
+    var targetInfo=getKnowledgeTargetParamInfo();
+    var hasHealth=targetInfo.params && targetInfo.params.some(function(p){return /\bsalute\b/i.test(p);});
+    var sourceText=String(state.selectedEntry&&state.selectedEntry.source||'').toLowerCase();
+    var isDamagingSpell=hasHealth && combatSignForKnowledge('Salute')==='-' && sourceText.indexOf('incantesimo')!==-1;
+    var baseNumerator=param*base*fatigueFactor*skillFactor*successFactor*externalForceFactor;
+    if(isMultiTargets){
+      dmgBox.className='force-damage-box';
+      dmgBox.innerHTML='<div class="force-target-title">Effetti separati per bersaglio</div><div class="note">La Forza dell’evocazione è unica; Resistenza, Salute, esito e conseguenze medimagiche vengono calcolati separatamente per ciascun bersaglio.</div>';
+      forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell);
+    }else if(resistance!==null && resistance>0){
+      var rawEffect=Math.pow(Math.max(0,baseNumerator/resistance),.6);
       var health=Math.round(rawEffect);
       var other=Math.round(rawEffect/5);
-      var targetInfo=getKnowledgeTargetParamInfo();
       var effect=buildTargetEffectHtml(targetInfo,health,other,null);
       dmgBox.className='force-damage-box';
       var title=(targetInfo.raw && !targetInfo.special)
         ? '<div class="force-target-title">Effetto concreto sul bersaglio</div><div class="note">Parametri indicati dalle Specifiche: '+escapeHtml(targetInfo.raw)+'.</div>'
         : '<div class="force-target-title">Entità dell’effetto contro Resistenza '+escapeHtml(forceFmt(resistance,2))+'</div><div class="note">Le Specifiche non indicano un elenco semplice di Parametri: applica il valore pertinente al tipo di effetto descritto.</div>';
       var med={html:'',copy:''};
-      var hasHealth=targetInfo.params && targetInfo.params.some(function(p){return /\bsalute\b/i.test(p);});
-      var sourceText=String(state.selectedEntry&&state.selectedEntry.source||'').toLowerCase();
-      var isDamagingSpell=hasHealth && combatSignForKnowledge('Salute')==='-' && sourceText.indexOf('incantesimo')!==-1;
       var healthInput=qs('forceTargetHealth');
       if(healthInput){healthInput.classList.remove('medical-needed');}
       if(isDamagingSpell){
@@ -3719,6 +3956,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       el.addEventListener('change',function(){ refreshForceCard(); refreshModifierSummary(); });
     });
     var adv=qs('forceAdvancedLevel'); if(adv){ adv.addEventListener('change',function(){ refreshForceCard(); refreshModifierSummary(); }); }
+    forceBindMultiTargetManager();
   }
 
   function cleanText(text){
