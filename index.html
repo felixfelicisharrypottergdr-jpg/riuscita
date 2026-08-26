@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -943,6 +944,38 @@
   #erbologiaBridgeCard .step-label{margin-bottom:10px}.erb-r-bridge-box{padding:12px 14px;border:1px solid #8eaa70;border-left:4px solid #668c48;border-radius:7px;background:rgba(145,177,104,.14);color:#3f3424;line-height:1.48}.erb-r-bridge-box strong{color:var(--maroon-deep)}.erb-r-bridge-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center}.erb-r-bridge-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #536e3b;border-radius:6px;background:#668c48;color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:13px}.erb-r-bridge-link:hover{filter:brightness(1.08)}.erb-r-bridge-status{margin-top:9px;font-size:13px;color:#5f4b31}.erb-r-bridge-status.ok{font-weight:700;color:#39662c}.erb-r-bridge-status.warn{font-weight:700;color:#892c0f}@media(max-width:640px){.erb-r-bridge-link{width:100%}}
 
 </style>
+
+<style id="v28-collegamenti-inline">
+  #schedaCard .knowledge-bridge-inline{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed rgba(137,44,15,.30);
+  }
+  #schedaCard .knowledge-bridge-inline-title{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin:0 0 7px;
+    color:var(--maroon-deep);
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:13px;
+    font-weight:700;
+  }
+  #schedaCard .knowledge-bridge-inline-title i{
+    color:var(--maroon);
+    font-size:13px;
+  }
+  #schedaCard .mz-bridge-box,
+  #schedaCard .erb-r-bridge-box{
+    padding:10px 12px;
+    line-height:1.42;
+  }
+  #schedaCard .mz-bridge-actions,
+  #schedaCard .erb-r-bridge-actions{
+    margin-top:8px;
+  }
+</style>
+
 </head>
 <body>
 <div class="wrap">
@@ -974,6 +1007,15 @@
     <p class="step-label"><span class="num">0</span>Conoscenza selezionata <span id="schedaTag"></span></p>
     <div class="scheda-box" id="schedaBox"></div>
 
+    <div class="knowledge-bridge-inline hidden" id="magizoologiaBridgeCard">
+      <p class="knowledge-bridge-inline-title"><i class="fa-solid fa-paw" aria-hidden="true"></i> Collegamento Magizoologia</p>
+      <div class="mz-bridge-box" id="magizoologiaBridgeBody"></div>
+    </div>
+
+    <div class="knowledge-bridge-inline hidden" id="erbologiaBridgeCard">
+      <p class="knowledge-bridge-inline-title"><i class="fa-brands fa-pagelines" aria-hidden="true"></i> Collegamento Erbologia</p>
+      <div class="erb-r-bridge-box" id="erbologiaBridgeBody"></div>
+    </div>
   </div>
 
 
@@ -1028,17 +1070,6 @@
       <option value="lv4">Sapienza Livello 4</option>
       <option value="lv5">Sapienza Livello 5</option>
     </select>
-  </div>
-
-  <div class="card hidden" id="magizoologiaBridgeCard">
-    <p class="step-label"><span class="num"><i class="fa-solid fa-paw" aria-hidden="true"></i></span>Collegamento Magizoologia</p>
-    <div class="mz-bridge-box" id="magizoologiaBridgeBody"></div>
-  </div>
-
-
-  <div class="card hidden" id="erbologiaBridgeCard">
-    <p class="step-label"><span class="num"><i class="fa-brands fa-pagelines" aria-hidden="true"></i></span>Collegamento Erbologia</p>
-    <div class="erb-r-bridge-box" id="erbologiaBridgeBody"></div>
   </div>
 
   <div class="card" id="detailsCard">
@@ -1269,11 +1300,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var card=qs('magizoologiaBridgeCard'),body=qs('magizoologiaBridgeBody');
     if(!card||!body)return;
     if(!mzIsMagizoologiaEntry(entry)){
-      card.className='card hidden';
+      card.className='knowledge-bridge-inline hidden';
       body.innerHTML='';
       return;
     }
-    card.className='card';
+    card.className='knowledge-bridge-inline';
     var phase=mzBridgePhaseLabel(mzBridgeRequestMatches(entry)?mzBridgeRequest:null,entry);
     var linked=mzBridgeRequestMatches(entry);
     var html='';
@@ -1410,8 +1441,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function erbBridgeUpdateCard(entry){
     var card=qs('erbologiaBridgeCard'),body=qs('erbologiaBridgeBody');
     if(!card||!body)return;
-    if(!erbIsErbologiaEntry(entry)){card.className='card hidden';body.innerHTML='';return;}
-    card.className='card';
+    if(!erbIsErbologiaEntry(entry)){card.className='knowledge-bridge-inline hidden';body.innerHTML='';return;}
+    card.className='knowledge-bridge-inline';
     var linked=erbBridgeRequestMatches(entry),phase=erbBridgePhaseLabel(linked?erbBridgeRequest:null,entry),ret=linked?toolReturnTarget(erbSafeReturn(erbBridgeRequest),'#modoErbologia'):'';
     var html=linked
       ?('<strong>Richiesta dall’Erbologia · '+escapeHtml(phase)+'.</strong><br>La Conoscenza e i dati compatibili del PG sono già impostati. Prepara il codice del tiro e lancialo sul forum; poi clicca qui la fascia di riuscita ottenuta (0% / 33% / 66% / 100%): verrà riportata automaticamente nella riga di Erbologia da cui sei partito.')
