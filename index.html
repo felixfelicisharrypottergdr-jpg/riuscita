@@ -831,8 +831,8 @@
   .knowledge-bonus-compact-summary{display:none;padding:9px 11px;border:1px solid rgba(137,44,15,.28);border-left:4px solid var(--gold);border-radius:6px;background:rgba(233,217,172,.38);color:#4b3520;line-height:1.42;font-size:12.5px;}
   .knowledge-bonus-row.has-preset .knowledge-bonus-compact-summary{display:block;}
   .knowledge-bonus-action-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;padding-top:2px;}
-  .knowledge-bonus-apply{display:flex;align-items:center;gap:6px;min-height:34px;color:#4b3520;font-size:12.5px;font-weight:700;}
-  .knowledge-bonus-uses{width:145px;flex:0 1 145px;}
+  .knowledge-bonus-auto-use{flex:1 1 250px;min-height:34px;display:flex;align-items:center;color:#4b3520;font-size:12.5px;line-height:1.35;}
+  .knowledge-bonus-row.is-exhausted .knowledge-bonus-auto-use{color:#892c0f;font-weight:700;}
   .knowledge-bonus-remaining{flex:1 1 190px;color:#735c3f;font-size:12px;line-height:1.3;}
   .knowledge-bonus-remove{width:38px;height:34px;padding:0;margin:0;background:transparent;border:1px solid var(--maroon);border-radius:5px;color:var(--maroon);cursor:pointer;font-size:18px;line-height:1;}
   .knowledge-bonus-remove:hover{background:var(--maroon);color:var(--parchment);}
@@ -854,7 +854,6 @@
     .sigillo-conoscenze{width:58px;height:58px;font-size:25px;}
     .knowledge-bonus-manual-fields{grid-template-columns:1fr;}
     .knowledge-bonus-action-row{align-items:stretch;}
-    .knowledge-bonus-uses{width:100%;flex:1 1 100%;}
     .knowledge-bonus-remove{width:100%;}
     #schedaCard .knowledge-link-box{align-items:stretch;flex-direction:column;}
     #schedaCard .knowledge-link-button{width:100%;}
@@ -918,12 +917,18 @@
   button.inline-outcome-chip{font-family:Georgia,"Times New Roman",serif;cursor:pointer;}
   button.inline-outcome-chip:hover{border-color:var(--maroon);background:#f5ead0;}
   button.inline-outcome-chip.is-selected{border:2px solid var(--high);background:#f4fbea;color:#274d20;box-shadow:0 0 0 3px rgba(57,102,44,.10);}
+
+  /* v27 — esito scelto: effetto immediatamente sotto le fasce. */
+  #detailsCard #autoDadiExtraWrap{margin:12px 0 0;padding:12px 14px;border:1px solid rgba(57,102,44,.42);border-left:4px solid var(--high);background:rgba(244,251,234,.72);}
+  #detailsCard #autoDadiExtraWrap .step-label{margin-bottom:6px;}
+  #detailsCard #autoDadiExtraWrap .auto-extra-note{margin-bottom:9px;}
   .rule-outcome-row.is-current-outcome{position:relative;background:#f4fbea;box-shadow:inset 4px 0 0 var(--high);}
   .rule-outcome-row.is-current-outcome .rule-outcome-pct{color:var(--high);}
   .rule-outcome-selected{display:block;margin-top:3px;font-size:10px;line-height:1.1;text-transform:uppercase;letter-spacing:.04em;color:var(--high);}
   .rule-outcome-row.is-other-outcome{opacity:.38;background:rgba(255,250,240,.42);}
   .rule-outcome-row.is-other-outcome button,.rule-outcome-row.is-other-outcome input{pointer-events:none;}
   .modifier-item.mod-knowledge{border-left-color:var(--maroon-deep);}
+  .modifier-item.mod-outcome{border-left-color:var(--high);background:#fbfff7;}
   .modifier-item.mod-usage{border-left-color:#7c6b34;}
 
 
@@ -1046,7 +1051,7 @@
     <input type="text" id="linkRole" placeholder="Es. https://tuoforum.forumfree.it/?t=...">
     <div id="bonusRowField" class="knowledge-bonus-manager">
       <h3>Oggetti / Conoscenze — Riuscita</h3>
-      <p class="knowledge-bonus-help">Aggiungi ciò che interviene sulla riuscita di questa Conoscenza. Come in Magizoologia puoi usare un effetto già previsto dal catalogo oppure inserirne uno manualmente. Il tool somma automaticamente Bonus/Malus alle Possibilità e tiene nel riepilogo anche limiti di riuscita, Forza, Destrezza, Fatica e altri effetti utili.</p>
+      <p class="knowledge-bonus-help">Aggiungi ciò che interviene sulla riuscita di questa Conoscenza. Se lo selezioni, viene applicato automaticamente al tiro: non serve confermarlo una seconda volta. Per gli effetti a usi limitati, il consumo viene aggiornato automaticamente quando copi il codice del tiro.</p>
       <div class="knowledge-bonus-list" id="knowledgeBonusList"></div>
       <button type="button" class="knowledge-bonus-add" id="addKnowledgeBonus">+ Aggiungi bonus / malus</button>
     </div>
@@ -1066,6 +1071,12 @@
       <textarea id="diceCodeBox" readonly rows="7" style="width:100%; padding:10px 12px; font-family:'EB Garamond', serif; font-size:14px; border:1.5px solid var(--line); border-radius:8px; background:#fffdf6; color:var(--ink); resize:vertical;"></textarea>
       <button class="roll-btn" id="copyCodeBtn" type="button">Copia codice dado</button>
       <div id="inlineOutcomeLegend" class="inline-outcome-legend hidden"></div>
+    </div>
+
+    <div id="autoDadiExtraWrap" class="card hidden">
+      <p class="step-label auto-extra-title"><span class="num"><i class="fa-solid fa-dice" aria-hidden="true"></i></span><span id="autoExtraTitleText">Effetto della riuscita scelta</span></p>
+      <p class="note auto-extra-note">Qui compare soltanto ciò che ottieni con la percentuale selezionata e con il tipo di PG indicato. Se è previsto un dado secondario, puoi gestirlo direttamente qui.</p>
+      <div class="dado-extra-list" id="dadoExtraList"></div>
     </div>
   </div>
 
@@ -1102,11 +1113,6 @@
     <button class="roll-btn" id="copyModifiersBtn" type="button">Copia riepilogo utilizzo</button>
   </div>
 
-  <div id="autoDadiExtraWrap" class="card hidden">
-    <p class="step-label auto-extra-title"><span class="num"><i class="fa-solid fa-dice" aria-hidden="true"></i></span>Effetti dell’esito ottenuto</p>
-    <p class="note auto-extra-note">Questa sezione compare dopo che hai indicato la fascia ottenuta sul forum. Mostra soltanto le Specifiche pertinenti al PG selezionato e mette in evidenza la riga dell’esito effettivo; gli eventuali dadi secondari si gestiscono qui.</p>
-    <div class="dado-extra-list" id="dadoExtraList"></div>
-  </div>
 
   <footer>Il dado viene risolto sul forum: qui prepari il codice e tieni traccia soltanto di costi, modificatori e consumi dell'utilizzo.</footer>
 </div>
@@ -1190,6 +1196,17 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
 
+
+  function toolReturnTarget(raw,defaultHash){
+    if(!raw)return '';
+    try{
+      var u=new URL(raw,window.location.href);
+      if(u.protocol!=='https:'&&u.protocol!=='http:')return '';
+      if(!u.hash && defaultHash)u.hash=defaultHash;
+      return u.href;
+    }catch(e){return '';}
+  }
+
   /* ===== PONTE MAGIZOOLOGIA ↔ RIUSCITA ===== */
   var MZ_BRIDGE_REQUEST_PREFIX = 'ffgdr_mz_knowledge_request_v2_';
   var MZ_BRIDGE_RESPONSE_PREFIX = 'ffgdr_mz_knowledge_response_v2_';
@@ -1265,8 +1282,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }else{
       html+='<strong>Questa Conoscenza può essere utilizzata in Magizoologia.</strong><br>'+        'Prepara qui il codice del tiro e lancialo sul forum. Usa poi la fascia di riuscita ottenuta (0% / 33% / 66% / 100%) '+        'nel passaggio corrispondente della Guida alla Magizoologia.';
     }
+    var mzTarget=(linked&&mzBridgeRequest)?toolReturnTarget(mzBridgeRequest.returnUrl,'#modoMagizoologia'):'';
+    if(!mzTarget)mzTarget=MZ_TOOL_URL;
     html+='<div class="mz-bridge-actions">'+
-      '<a class="mz-bridge-link" href="'+MZ_TOOL_URL+'" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-paw" aria-hidden="true"></i> Vai alla Magizoologia</a>';
+      '<a class="mz-bridge-link" href="'+escapeHtml(mzTarget)+'" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-paw" aria-hidden="true"></i> Vai alla Magizoologia</a>';
     html+='</div>';
     if(linked)html+='<div class="mz-bridge-status" id="mzBridgeStatus">Collegamento attivo con la richiesta di Magizoologia.</div>';
     body.innerHTML=html;
@@ -1393,7 +1412,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if(!card||!body)return;
     if(!erbIsErbologiaEntry(entry)){card.className='card hidden';body.innerHTML='';return;}
     card.className='card';
-    var linked=erbBridgeRequestMatches(entry),phase=erbBridgePhaseLabel(linked?erbBridgeRequest:null,entry),ret=linked?erbSafeReturn(erbBridgeRequest):'';
+    var linked=erbBridgeRequestMatches(entry),phase=erbBridgePhaseLabel(linked?erbBridgeRequest:null,entry),ret=linked?toolReturnTarget(erbSafeReturn(erbBridgeRequest),'#modoErbologia'):'';
     var html=linked
       ?('<strong>Richiesta dall’Erbologia · '+escapeHtml(phase)+'.</strong><br>La Conoscenza e i dati compatibili del PG sono già impostati. Prepara il codice del tiro e lancialo sul forum; poi clicca qui la fascia di riuscita ottenuta (0% / 33% / 66% / 100%): verrà riportata automaticamente nella riga di Erbologia da cui sei partito.')
       :('<strong>Questa Conoscenza può essere utilizzata in Erbologia.</strong><br>Prepara qui il codice del tiro e lancialo sul forum. Usa poi la fascia di riuscita ottenuta (0% / 33% / 66% / 100%) nel passaggio corrispondente della Guida all’Erbologia.');
@@ -1528,7 +1547,6 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var note = row.querySelector('.knowledge-bonus-note');
     var totalEl = row.querySelector('[data-role="total"]');
     var usedEl = row.querySelector('[data-role="used"]');
-    var apply = row.querySelector('[data-role="apply"]');
 
     if (p){
       if (totalEl){ totalEl.value = p.unlimited ? '0' : String(p.total||0); }
@@ -1549,7 +1567,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (total > 0 && used > total){ used = total; if (usedEl) usedEl.value = String(used); }
     var remaining = row.querySelector('.knowledge-bonus-remaining');
     if (remaining){ remaining.textContent = total === 0 ? 'Usi: illimitati / non conteggiati' : (used + '/' + total + ' usi → ' + Math.max(0,total-used) + ' rimasti'); }
-    if (apply){ apply.disabled = !key || (total > 0 && used >= total && row.dataset.consumedCurrent !== '1'); if (apply.disabled){ apply.checked = false; } }
+    var exhausted = !!key && total > 0 && used >= total && row.dataset.consumedCurrent !== '1';
+    row.classList.toggle('is-exhausted', exhausted);
+    var autoUse = row.querySelector('.knowledge-bonus-auto-use');
+    if (autoUse){ autoUse.innerHTML = exhausted ? '<strong>Usi esauriti:</strong>&nbsp; questo bonus non viene applicato.' : '<strong>Applicato automaticamente a questo tiro.</strong>&nbsp; L’uso viene conteggiato quando copi il codice.'; }
   }
 
   function kbCreateRow(data){
@@ -1566,7 +1587,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         '<div class="knowledge-bonus-field"><label>Usi totali (0 = illimitati)</label><input type="number" data-role="total" value="0" min="0" step="1"></div>' +
         '<div class="knowledge-bonus-field"><label>Nota / dettaglio</label><input type="text" data-role="note" maxlength="180" placeholder="Es. non cumulabile con..."></div>' +
       '</div>' +
-      '<div class="knowledge-bonus-action-row"><label class="knowledge-bonus-apply"><input type="checkbox" data-role="apply" checked> Applica a questo tiro</label><div class="knowledge-bonus-field knowledge-bonus-uses"><label>Usi consumati</label><input type="number" data-role="used" value="0" min="0" step="1"></div><div class="knowledge-bonus-remaining"></div><button type="button" class="knowledge-bonus-remove" title="Elimina bonus" aria-label="Elimina bonus">×</button></div>' +
+      '<div class="knowledge-bonus-action-row"><input type="hidden" data-role="used" value="0"><div class="knowledge-bonus-auto-use"><strong>Applicato automaticamente a questo tiro.</strong>&nbsp; L’uso viene conteggiato quando copi il codice.</div><div class="knowledge-bonus-remaining"></div><button type="button" class="knowledge-bonus-remove" title="Elimina bonus" aria-label="Elimina bonus">×</button></div>' +
       '<div class="knowledge-bonus-note"></div>';
     qs('knowledgeBonusList').appendChild(row);
     var preset = row.querySelector('[data-role="preset"]');
@@ -1574,18 +1595,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if (data.preset === 'manual'){
       ['source','condition','type','value','total','used','note'].forEach(function(k){ var el=row.querySelector('[data-role="'+k+'"]'); if(el && data[k] !== undefined){ el.value=data[k]; } });
     }
-    if (data.apply === false){ row.querySelector('[data-role="apply"]').checked = false; }
     kbUpdateRow(row);
 
     preset.addEventListener('change',function(){ row.dataset.consumedCurrent='0'; var used=row.querySelector('[data-role="used"]'); if(used)used.value='0'; kbUpdateRow(row); kbRefreshAll(); });
-    row.querySelector('[data-role="apply"]').addEventListener('change',function(){
-      if (!this.checked && row.dataset.consumedCurrent === '1'){
-        var used=row.querySelector('[data-role="used"]'); if(used){ used.value=String(Math.max(0,Math.floor(kbNum(used.value,0))-1)); }
-        row.dataset.consumedCurrent='0';
-      }
-      kbUpdateRow(row); kbRefreshAll();
-    });
-    row.querySelector('[data-role="used"]').addEventListener('input',function(){ kbUpdateRow(row); kbRefreshAll(); });
     row.querySelector('[data-role="total"]').addEventListener('input',function(){ kbUpdateRow(row); kbRefreshAll(); });
     row.querySelectorAll('.knowledge-bonus-manual-fields input,.knowledge-bonus-manual-fields select').forEach(function(el){
       el.addEventListener('input',function(){ kbUpdateRow(row); kbRefreshAll(); });
@@ -1600,7 +1612,6 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function kbEffectiveEntries(){
     var rows = kbAllRows(), plain = [], grouped = {};
     rows.forEach(function(row){
-      var apply = row.querySelector('[data-role="apply"]'); if (!apply || !apply.checked || apply.disabled){ return; }
       var e = kbRowEffect(row); if (!e){ return; }
       var total = e.unlimited ? 0 : Math.max(0,Math.floor(kbNum((row.querySelector('[data-role="total"]')||{}).value,e.total||0)));
       var used = Math.max(0,Math.floor(kbNum((row.querySelector('[data-role="used"]')||{}).value,0)));
@@ -2332,15 +2343,25 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var a=document.createElement('div'); a.className='rule-audience-title'; a.textContent=block.label; box.appendChild(a);
     if(block.intro){ var intro=document.createElement('div'); intro.className='rule-audience-intro'; intro.textContent=block.intro; box.appendChild(intro); }
     var rows=document.createElement('div'); rows.className='rule-outcomes';
-    for(var i=0;i<block.outcomes.length;i++){ rows.appendChild(makeRuleOutcomeRow(entry,block,block.outcomes[i])); }
+    var shown=0;
+    for(var i=0;i<block.outcomes.length;i++){
+      if(state.lastPct!==null && typeof state.lastPct!=='undefined' && Number(block.outcomes[i].pct)!==Number(state.lastPct)) continue;
+      rows.appendChild(makeRuleOutcomeRow(entry,block,block.outcomes[i])); shown++;
+    }
+    if(!shown){ var none=document.createElement('div'); none.className='rule-context-prompt'; none.textContent='Con questa riuscita non è previsto un effetto aggiuntivo specifico.'; rows.appendChild(none); }
     box.appendChild(rows); return box;
   }
 
   function renderAutoExtraRolls(entry){
     var wrap=qs('autoDadiExtraWrap'),list=qs('dadoExtraList'); list.innerHTML='';
+    var title=qs('autoExtraTitleText'); if(title && state.lastPct!==null && typeof state.lastPct!=='undefined'){ title.textContent='Con '+state.lastPct+'% ottieni'; }
     var blocks=extractAudienceRuleBlocks(entry),rolls=entry&&entry.extraRolls?entry.extraRolls:[];
-    if(!blocks.length&&!rolls.length){ wrap.className='card hidden'; sendHeightSoon(); return; }
     if(state.lastPct===null || typeof state.lastPct==='undefined'){ wrap.className='card hidden'; sendHeightSoon(); return; }
+    if(!blocks.length&&!rolls.length){
+      var plain=document.createElement('div'); plain.className='rule-context-prompt';
+      plain.innerHTML='<b>Riuscita selezionata: '+state.lastPct+'%.</b><br>Questa Conoscenza non prevede altri effetti o dadi secondari legati alla percentuale ottenuta.';
+      list.appendChild(plain); wrap.className='card'; sendHeightSoon(); return;
+    }
 
     var formulasInAudience={};
     for(var bi=0;bi<blocks.length;bi++)for(var oi=0;oi<blocks[bi].outcomes.length;oi++)if(blocks[bi].outcomes[oi].formula)formulasInAudience[normalizeDiceFormula(blocks[bi].outcomes[oi].formula)]=true;
@@ -2363,7 +2384,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     for(var i=0;i<rolls.length;i++){
       if(formulasInAudience[normalizeDiceFormula(rolls[i].formula)]) continue;
       var cases=expandRollCases(entry,rolls[i]);
-      for(var j=0;j<cases.length;j++){ extraNodes.push(makeAutoRollItem(entry,cases[j])); }
+      for(var j=0;j<cases.length;j++){
+        var node=makeAutoRollItem(entry,cases[j]);
+        if(state.lastPct!==null && node.classList.contains('auto-roll-not-current')) continue;
+        extraNodes.push(node);
+      }
     }
     if(extraNodes.length){
       var ht=document.createElement('div'); ht.className='rule-unconditional-title'; ht.textContent=blocks.length?'Altri tiri previsti':'Tiri extra previsti dal regolamento'; list.appendChild(ht);
@@ -2789,6 +2814,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
     if (!nomeCon){ nomeCon = 'Conoscenza'; }
     items.push({kind:'knowledge', label:'Conoscenza', text:nomeCon});
+    if(state.lastPct!==null && typeof state.lastPct!=='undefined'){
+      items.push({kind:'outcome', label:'Riuscita ottenuta', text:String(state.lastPct)+'%'});
+    }
 
     if (state.selectedEntry){
       var fatigue = getFatigueValues();
@@ -2917,7 +2945,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }
     html+='</div><div class="inline-outcome-note">Non serve riscrivere il numero del dado: scegli soltanto la fascia che lo comprende';
     if(agg.rollDelta!==0){ html+='; le fasce includono già il modificatore '+escapeHtml(kbSigned(agg.rollDelta)); }
-    html+='. Gli effetti specifici compariranno in fondo alla pagina con la riga corretta evidenziata.</div>';
+    html+='. Subito sotto comparirà ciò che ottieni con quella riuscita.</div>';
     box.innerHTML=html; box.className='inline-outcome-legend';
     box.querySelectorAll('[data-outcome-pct]').forEach(function(btn){
       btn.addEventListener('click',function(){
@@ -2926,6 +2954,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         state.lastPct=pct;
         renderInlineOutcomeLegend(table);
         if(state.selectedEntry)renderAutoExtraRolls(state.selectedEntry);
+        refreshModifierSummary();
         mzBridgePublishResult(pct,0,0,agg.rollDelta||0);
         erbBridgePublishResult(pct,0,0,agg.rollDelta||0);
         sendHeightSoon();
@@ -3217,6 +3246,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   var card=document.getElementById('guideReturnCard'),link=document.getElementById('guideReturnLink'),label=document.getElementById('guideReturnLabel'),text=document.getElementById('guideReturnText');
   if(!card||!link||!label)return;
   var isM=from==='magizoologia';
+  if(!u.hash)u.hash=isM?'#modoMagizoologia':'#modoErbologia';
   link.href=u.href;
   label.textContent=isM?'Apri la Guida alla Magizoologia':'Apri la Guida all’Erbologia';
   if(text)text.textContent='Il tool di provenienza resta separato: puoi riaprirlo in un’altra pagina senza sostituire Riuscita delle Conoscenze.';
