@@ -1253,7 +1253,7 @@
   .force-target-effect{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf6;}
   .force-target-effect b{color:var(--maroon-deep);font-size:17px;}
 
-  /* ===== v35 — BERSAGLI MULTIPLI + EXPORT SAN MUNGO RIPRISTINATO ===== */
+  /* ===== v36 — BERSAGLI MULTIPLI + AVVISO UN PAZIENTE ALLA VOLTA ===== */
   .force-multi-manager{
     margin-top:14px;
     padding:13px 14px;
@@ -1285,6 +1285,8 @@
   .force-target-summary{margin:10px 0 0;padding:8px 10px;border-left:4px solid var(--gold);background:rgba(201,162,39,.08);font-size:12.5px;line-height:1.4;color:#5a4630;}
   .force-ardor-budget{margin-top:9px;padding:8px 10px;border:1px dashed var(--line);border-radius:6px;background:rgba(137,44,15,.05);font-size:12.5px;line-height:1.4;color:#5a4630;}
   .force-ardor-budget.warn{border-color:var(--maroon);color:var(--maroon-deep);font-weight:700;}
+  .force-patient-notice{margin-top:10px;padding:10px 12px;border:1px solid rgba(137,44,15,.32);border-left:4px solid var(--maroon);border-radius:0 7px 7px 0;background:rgba(242,230,201,.58);font-size:13px;line-height:1.45;color:#5a4630;}
+  .force-patient-notice strong{color:var(--maroon-deep);}
   @media(max-width:700px){.force-target-fields{grid-template-columns:1fr;}.force-target-fields .force-field.full{grid-column:auto;}}
   .combat-tools-card details{border:1px solid var(--line);border-radius:9px;background:rgba(255,251,238,.6);margin-top:10px;overflow:hidden;}
   .combat-tools-card summary{cursor:pointer;padding:12px 14px;font-family:'Cinzel',serif;color:var(--maroon-deep);font-weight:700;}
@@ -1531,6 +1533,7 @@
         </div>
         <div class="force-target-count-buttons" id="forceTargetCountButtons"></div>
         <div class="force-ardor-budget hidden" id="forceArdorBudget"></div>
+        <div class="force-patient-notice hidden" id="forceMultiPatientNotice"><strong>Un paziente alla volta.</strong> Il tool di Medimagia gestisce una sola cartella clinica per volta. Se hai colpito più bersagli, importa e completa un paziente prima di passare al successivo: non esportare tutti i bersagli insieme.</div>
         <div class="force-target-list" id="forceTargetList"></div>
       </div>
 
@@ -3759,7 +3762,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     manager.classList.toggle('hidden',!multi);
     if(singleR)singleR.classList.toggle('hidden',multi);
     if(singleH)singleH.classList.toggle('hidden',multi);
-    if(!multi)return false;
+    var patientNotice=qs('forceMultiPatientNotice');
+    if(!multi){if(patientNotice)patientNotice.classList.add('hidden');return false;}
     var ft=forceTargetStateEnsure(maxTargets), ardor=forceIsArdorConvergence(maxTargets);
     qs('forceMultiTargetTitle').textContent='Bersagli dell’azione · massimo '+maxTargets;
     qs('forceMultiTargetNote').innerHTML='<strong>Quanti bersagli prendi effettivamente di mira?</strong> Seleziona un numero qui sotto. Ogni bersaglio ha Resistenza, Salute ed esito propri; soltanto quelli colpiti producono danni e Sintomi esportabili.'+(ardor?' <strong>Ardor con Sapienza Offensiva 25:</strong> puoi distribuire fino a '+maxTargets+' proiettili tra i bersagli e indicare quanti vanno effettivamente a segno.':'');
@@ -3827,6 +3831,24 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell){
     var ft=state.forceTargets, ardor=forceIsArdorConvergence(maxTargets), totalAssigned=0, htmlCopy=[];
     if(!ft)return;
+
+    /* v36: Medimagia può seguire una sola cartella clinica per volta.
+       L'avviso compare soltanto quando più di un bersaglio risulta effettivamente colpito
+       da una Conoscenza che può produrre conseguenze medimagiche. */
+    var hitTargets=0;
+    for(var hn=0;hn<ft.items.length;hn++){
+      var hItem=ft.items[hn];
+      if(ardor){
+        var hProjectiles=Math.max(1,Math.floor(Number(hItem.projectiles)||1));
+        var hHits=Math.max(0,Math.min(hProjectiles,Math.floor(Number(hItem.hits)||0)));
+        if(hHits>0)hitTargets++;
+      }else if(hItem.hit!=='miss'){
+        hitTargets++;
+      }
+    }
+    var patientNotice=qs('forceMultiPatientNotice');
+    if(patientNotice)patientNotice.classList.toggle('hidden',!(isDamagingSpell && hitTargets>1));
+
     if(ardor){
       for(var z=0;z<ft.items.length;z++)totalAssigned+=Math.max(1,Math.floor(Number(ft.items[z].projectiles)||1));
       var budget=qs('forceArdorBudget');
