@@ -2754,10 +2754,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function buildModifierCopyText(items){
     var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
     if (!nomeCon){ nomeCon = 'Conoscenza'; }
-    var lines = ['[b]' + nomeCon + '[/b]'];
+    var lines = ['<b>' + nomeCon + '</b>'];
     for (var i=0;i<items.length;i++){
       if (items[i].kind === 'knowledge'){ continue; }
-      lines.push('• [b]' + items[i].label + ':[/b] ' + items[i].text);
+      lines.push('• <b>' + items[i].label + ':</b> ' + items[i].text);
     }
     if (lines.length === 1){ lines.push('• Nessun costo o modificatore da registrare.'); }
     return lines.join('\n');
@@ -2949,7 +2949,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     qs('flavorText').textContent = AUTO_FLAVOR;
     qs('timestamp').textContent = 'Registrato alle ' + stamp;
 
-    var autoLog = '[b]Riuscita Conoscenza[/b]' + '\n';
+    var autoLog = '<b>Riuscita Conoscenza</b>' + '\n';
     if (nomePg){ autoLog += 'PG: ' + nomePg + '\n'; }
     if (nomeCon){ autoLog += 'Conoscenza: ' + nomeCon + '\n'; }
     autoLog += 'Conoscenza Autoconclusiva: nessun tiro necessario → Riuscita 100%\n';
