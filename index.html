@@ -8,7 +8,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Riuscita e Forza delle Conoscenze</title>
+<title>Riuscita, Forza e Scontri</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <style>
   @font-face {
@@ -1209,6 +1209,18 @@
     padding:8px 10px;
   }
   .force-damage-pill b{color:var(--maroon-deep);font-size:18px;}
+
+  .force-target-title{font-weight:700;color:var(--maroon-deep);margin-bottom:7px;}
+  .force-target-effects{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .force-target-effect{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf6;}
+  .force-target-effect b{color:var(--maroon-deep);font-size:17px;}
+  .combat-tools-card details{border:1px solid var(--line);border-radius:9px;background:rgba(255,251,238,.6);margin-top:10px;overflow:hidden;}
+  .combat-tools-card summary{cursor:pointer;padding:12px 14px;font-family:'Cinzel',serif;color:var(--maroon-deep);font-weight:700;}
+  .combat-tools-body{padding:0 14px 14px;}
+  .combat-result{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fffdf6;}
+  .combat-result.hidden{display:none!important;}
+  .combat-result-main{font-weight:700;color:var(--maroon-deep);margin-bottom:5px;}
+  .combat-result .force-target-effects{margin-top:6px;}
   .force-status-tag{
     display:inline-block;
     margin-left:7px;
@@ -1443,6 +1455,42 @@
         </div>
       </div>
     </div>
+
+  </div>
+
+  <div class="card combat-tools-card" id="combatToolsCard">
+    <p class="step-label"><span class="num"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>Calcoli di scontro</p>
+    <p class="note">Per gli Incantesimi il malus sul bersaglio viene calcolato automaticamente sopra. Qui puoi usare anche le altre due formule dello strumento STAFF.</p>
+
+    <details id="creatureCombatDetails">
+      <summary><i class="fa-solid fa-dragon" aria-hidden="true"></i> Attacco di una Creatura</summary>
+      <div class="combat-tools-body">
+        <div class="force-input-grid">
+          <div class="force-field"><label for="creatureForceAttack">Forza attacco della Creatura</label><input type="number" id="creatureForceAttack" min="0" step="1" inputmode="decimal" placeholder="Es. 200"></div>
+          <div class="force-field"><label for="creatureFatigueMax">Fatica totale della Creatura</label><input type="number" id="creatureFatigueMax" min="0.1" step="0.5" inputmode="decimal" placeholder="Es. 60"></div>
+          <div class="force-field"><label for="creatureFatigueCurrent">Fatica attuale della Creatura</label><input type="number" id="creatureFatigueCurrent" min="0" step="0.5" inputmode="decimal" placeholder="Es. 45"></div>
+          <div class="force-field"><label for="creatureTargetResistance">Resistenza del bersaglio</label><input type="number" id="creatureTargetResistance" min="0.1" step="0.5" inputmode="decimal" placeholder="Es. 15"></div>
+          <div class="force-field" style="grid-column:1 / -1"><label for="creatureAffectedParams">Altri Parametri intaccati <span class="force-status-tag">facoltativo</span></label><input type="text" id="creatureAffectedParams" placeholder="Es. Fatica, Destrezza"></div>
+        </div>
+        <div class="combat-result hidden" id="creatureCombatResult"></div>
+      </div>
+    </details>
+
+    <details id="potionCombatDetails">
+      <summary><i class="fa-solid fa-flask-vial" aria-hidden="true"></i> Effetto di una Pozione</summary>
+      <div class="combat-tools-body">
+        <div class="force-input-grid">
+          <div class="force-field"><label for="potionBaseForce">Forza della Pozione</label><input type="number" id="potionBaseForce" min="0" step="1" inputmode="decimal" placeholder="Es. 200"></div>
+          <div class="force-field"><label for="potionForcePct">Modifica di Forza (%)</label><input type="number" id="potionForcePct" step="1" inputmode="decimal" value="0" placeholder="Es. 40"></div>
+          <div class="force-field"><label for="potionDoseFactor">Dosi / quantità applicata</label><input type="number" id="potionDoseFactor" min="0" step="0.1" inputmode="decimal" value="1"></div>
+          <div class="force-field"><label for="potionTargetResistance">Resistenza del bersaglio</label><input type="number" id="potionTargetResistance" min="0.1" step="0.5" inputmode="decimal" placeholder="Es. 15"></div>
+          <div class="force-field"><label for="potionEffectSign">Tipo di effetto</label><select id="potionEffectSign"><option value="-">Malus / danno</option><option value="+">Bonus / recupero</option></select></div>
+          <div class="force-field"><label for="potionAffectedParams">Parametri intaccati</label><input type="text" id="potionAffectedParams" placeholder="Es. Salute, Resistenza"></div>
+        </div>
+        <p class="note">La modifica di Forza va indicata come percentuale: per esempio 40 per +40%. Se la Pozione agisce su più Parametri, scrivili separati da virgole.</p>
+        <div class="combat-result hidden" id="potionCombatResult"></div>
+      </div>
+    </details>
   </div>
 
   <!-- v20: il risultato effettivo resta sul forum; questi nodi sono mantenuti solo per compatibilità interna e non vengono mostrati. -->
@@ -1479,7 +1527,7 @@
   </div>
 
 
-  <footer>Il dado viene risolto sul forum: qui prepari il codice, determini la riuscita e calcoli la Forza effettiva quando prevista.</footer>
+  <footer>Il dado viene risolto sul forum: qui determini riuscita, Forza ed effetti concreti sul bersaglio; sono disponibili anche i calcoli per Creature e Pozioni.</footer>
 </div>
 
 <script>
@@ -3213,6 +3261,96 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return low==='varia' || (meta.baseForce===null && /\d/.test(low));
   }
 
+  function forceStripHtml(raw){
+    var box=document.createElement('div'); box.innerHTML=String(raw||'');
+    return cleanText(box.textContent||box.innerText||'');
+  }
+
+  function getKnowledgeTargetParamInfo(){
+    var out={raw:'',params:[],special:false};
+    if(!state.selectedEntry){ return out; }
+    var html=String(state.selectedEntry.html||'');
+    var re=/<c[^>]*>\s*Parametr(?:o(?:\s+del\s+bersaglio)?\s+(?:intaccato|influenzato)|i(?:\s+del\s+bersaglio)?\s+(?:intaccati|influenzati))\s*:\s*<\/c>([\s\S]*?)(?=<c\b|<b\b|<details\b|<\/details>|<div\b|<table\b|$)/i;
+    var m=html.match(re);
+    if(!m){ return out; }
+    var raw=forceStripHtml(m[1]).replace(/^\s*[:\-]\s*/,'').trim();
+    out.raw=raw;
+    if(!raw || raw==='//' || raw==='—'){ return out; }
+    if(/ripristina|parametri\s+persi|varia/i.test(raw)){ out.special=true; }
+    var cleaned=raw.replace(/\([^)]*\)/g,' ')
+      .replace(/\s+e\s+/gi,',')
+      .replace(/\s*\/\s*/g,',');
+    var bits=cleaned.split(',');
+    for(var i=0;i<bits.length;i++){
+      var p=cleanText(bits[i]).replace(/^(?:il|la|lo|i|gli|le)\s+/i,'');
+      if(!p || p==='//') continue;
+      if(out.params.indexOf(p)===-1) out.params.push(p);
+    }
+    return out;
+  }
+
+  function combatSignForKnowledge(paramName){
+    var text=cleanText(forceStripHtml(state.selectedEntry&&state.selectedEntry.html||'')).toLowerCase();
+    var p=String(paramName||'').toLowerCase();
+    if(/ripristina|recupera|guarisce|cura/.test(text) && p.indexOf('salute')>=0){ return '+'; }
+    if(/ottiene un bonus|conferisce un bonus|aumenta/.test(text) && !/subisce un malus|causa.*malus|riduce/.test(text)){ return '+'; }
+    return '-';
+  }
+
+  function buildTargetEffectHtml(info,health,other,forcedSign){
+    var effects=[], copy=[];
+    if(info && info.params && info.params.length && !info.special){
+      for(var i=0;i<info.params.length;i++){
+        var p=info.params[i], isHealth=/\bsalute\b/i.test(p), val=isHealth?health:other;
+        var sign=forcedSign||combatSignForKnowledge(p);
+        effects.push('<div class="force-target-effect"><b>'+escapeHtml(sign+String(val))+'</b> '+escapeHtml(p)+'</div>');
+        copy.push(sign+String(val)+' '+p);
+      }
+    }else{
+      var genericSign=forcedSign||'-';
+      effects.push('<div class="force-target-effect"><b>'+escapeHtml(genericSign+String(health))+'</b> Punti Salute</div>');
+      effects.push('<div class="force-target-effect"><b>'+escapeHtml(genericSign+String(other))+'</b> altri Parametri Fisici o Magici</div>');
+      copy.push(genericSign+String(health)+' Punti Salute',genericSign+String(other)+' altri Parametri Fisici o Magici');
+    }
+    return {html:'<div class="force-target-effects">'+effects.join('')+'</div>',copy:copy.join(' · ')};
+  }
+
+  function parseParamText(raw){
+    raw=cleanText(raw||''); if(!raw) return [];
+    return raw.replace(/\s+e\s+/gi,',').split(',').map(function(x){return cleanText(x);}).filter(Boolean);
+  }
+
+  function refreshCreatureCombat(){
+    var force=forceNumInput('creatureForceAttack'), fm=forceNumInput('creatureFatigueMax'), fc=forceNumInput('creatureFatigueCurrent'), res=forceNumInput('creatureTargetResistance');
+    var box=qs('creatureCombatResult'); if(!box)return;
+    if(force===null||force<0||fm===null||fm<=0||fc===null||fc<0||res===null||res<=0){box.className='combat-result hidden';box.innerHTML='';sendHeightSoon();return;}
+    var fatigue=Math.max(fc/fm,.1);
+    var raw=Math.pow(Math.max(0,10*force*fatigue/res),.6), health=Math.round(raw), other=Math.round(raw/5);
+    var params=parseParamText(qs('creatureAffectedParams').value), info={params:params,special:false};
+    var effect=params.length?buildTargetEffectHtml(info,health,other,'-'):buildTargetEffectHtml(null,health,other,'-');
+    box.className='combat-result'; box.dataset.copyText=effect.copy;
+    box.innerHTML='<div class="combat-result-main">Danno dell’attacco</div><div class="note">Fatica della Creatura: ×'+escapeHtml(forceFmt(fatigue,3))+' · Resistenza bersaglio: '+escapeHtml(forceFmt(res,2))+'</div>'+effect.html;
+    sendHeightSoon();
+  }
+
+  function refreshPotionCombat(){
+    var base=forceNumInput('potionBaseForce'), pct=forceNumInput('potionForcePct'), dose=forceNumInput('potionDoseFactor'), res=forceNumInput('potionTargetResistance');
+    var box=qs('potionCombatResult'); if(!box)return;
+    if(base===null||base<0||pct===null||dose===null||dose<0||res===null||res<=0){box.className='combat-result hidden';box.innerHTML='';sendHeightSoon();return;}
+    var raw=Math.pow(Math.max(0,(base*.6)*(1+pct/100)*dose/res),.6), health=Math.round(raw), other=Math.round(raw/5);
+    var params=parseParamText(qs('potionAffectedParams').value), info={params:params,special:false};
+    var sign=qs('potionEffectSign').value==='+'?'+':'-';
+    var effect=params.length?buildTargetEffectHtml(info,health,other,sign):buildTargetEffectHtml(null,health,other,sign);
+    box.className='combat-result'; box.dataset.copyText=effect.copy;
+    box.innerHTML='<div class="combat-result-main">Modifica causata dalla Pozione</div><div class="note">Forza applicata: '+escapeHtml(forceFmt(base*(1+pct/100),2))+' · Quantità: ×'+escapeHtml(forceFmt(dose,2))+' · Resistenza: '+escapeHtml(forceFmt(res,2))+'</div>'+effect.html;
+    sendHeightSoon();
+  }
+
+  function bindCombatInputs(){
+    ['creatureForceAttack','creatureFatigueMax','creatureFatigueCurrent','creatureTargetResistance','creatureAffectedParams'].forEach(function(id){var el=qs(id);if(!el)return;el.addEventListener('input',refreshCreatureCombat);el.addEventListener('change',refreshCreatureCombat);});
+    ['potionBaseForce','potionForcePct','potionDoseFactor','potionTargetResistance','potionEffectSign','potionAffectedParams'].forEach(function(id){var el=qs(id);if(!el)return;el.addEventListener('input',refreshPotionCombat);el.addEventListener('change',refreshPotionCombat);});
+  }
+
   function refreshForceCard(){
     var card=qs('forceCard'); if(!card){ return; }
     if(!state.selectedEntry){ card.className='card hidden'; return; }
@@ -3313,10 +3451,16 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       var rawEffect=Math.pow(Math.max(0,numerator/resistance),.6);
       var health=Math.round(rawEffect);
       var other=Math.round(rawEffect/5);
+      var targetInfo=getKnowledgeTargetParamInfo();
+      var effect=buildTargetEffectHtml(targetInfo,health,other,null);
       dmgBox.className='force-damage-box';
-      dmgBox.innerHTML='<strong>Effetto contro Resistenza '+escapeHtml(forceFmt(resistance,2))+':</strong> se la Conoscenza prevede un danno o una modifica quantitativa dei Parametri, il calcolo restituisce:<div class="force-damage-values"><div class="force-damage-pill"><b>'+health+'</b> Punti Salute</div><div class="force-damage-pill"><b>'+other+'</b> su altri Parametri Fisici o Magici</div></div>';
+      dmgBox.dataset.copyText=effect.copy;
+      var title=(targetInfo.raw && !targetInfo.special)
+        ? '<div class="force-target-title">Effetto concreto sul bersaglio</div><div class="note">Parametri indicati dalle Specifiche: '+escapeHtml(targetInfo.raw)+'.</div>'
+        : '<div class="force-target-title">Entità dell’effetto contro Resistenza '+escapeHtml(forceFmt(resistance,2))+'</div><div class="note">Le Specifiche non indicano un elenco semplice di Parametri: applica il valore pertinente al tipo di effetto descritto.</div>';
+      dmgBox.innerHTML=title+effect.html;
     }else{
-      dmgBox.className='force-damage-box hidden'; dmgBox.innerHTML='';
+      dmgBox.className='force-damage-box hidden'; dmgBox.innerHTML=''; delete dmgBox.dataset.copyText;
     }
     sendHeightSoon();
   }
@@ -3388,6 +3532,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       var forceResultEl=qs('forceResultBody'), forceValueEl=qs('forceResultValue');
       if(forceResultEl && forceValueEl && !forceResultEl.classList.contains('hidden') && forceValueEl.textContent!=='—'){
         items.push({kind:'force',label:'Forza effettiva',text:forceValueEl.textContent});
+      }
+      var targetEffectBox=qs('forceDamageBox');
+      if(targetEffectBox && !targetEffectBox.classList.contains('hidden') && targetEffectBox.dataset.copyText){
+        items.push({kind:'target',label:'Effetto sul bersaglio',text:targetEffectBox.dataset.copyText});
       }
       var fatigue = getFatigueValues();
       if (fatigue.length){
@@ -3778,6 +3926,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   bindForceInputs();
+  bindCombatInputs();
   refreshVisibility();
   refreshForceCard();
   kbRefreshActiveLine();
