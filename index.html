@@ -4,7 +4,7 @@
 
 
 <!DOCTYPE html>
-<!-- v30: riepilogo medimagico sempre visibile per Incantesimi che causano perdita di Salute -->
+<!-- v31: riepilogo medimagico sempre visibile per Incantesimi che causano perdita di Salute -->
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -948,7 +948,7 @@
   #erbologiaBridgeCard .step-label{margin-bottom:10px}.erb-r-bridge-box{padding:12px 14px;border:1px solid #8eaa70;border-left:4px solid #668c48;border-radius:7px;background:rgba(145,177,104,.14);color:#3f3424;line-height:1.48}.erb-r-bridge-box strong{color:var(--maroon-deep)}.erb-r-bridge-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center}.erb-r-bridge-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #536e3b;border-radius:6px;background:#668c48;color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:13px}.erb-r-bridge-link:hover{filter:brightness(1.08)}.erb-r-bridge-status{margin-top:9px;font-size:13px;color:#5f4b31}.erb-r-bridge-status.ok{font-weight:700;color:#39662c}.erb-r-bridge-status.warn{font-weight:700;color:#892c0f}@media(max-width:640px){.erb-r-bridge-link{width:100%}}
 
 
-  /* ===== v30: richiamo Salute totale per Incantesimi dannosi ===== */
+  /* ===== v31: richiamo Salute totale per Incantesimi dannosi ===== */
   .medical-needed-prompt{
     margin-top:12px;
     padding:12px 14px;
@@ -3438,6 +3438,31 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   var SAN_MUNGO_URL='https://felixfelicisharrypottergdr.forumfree.it/?pag=sanmungo';
+  var SAN_MUNGO_BRIDGE_KEY='ffgdr_clinical_import_v1';
+
+  function medStoreSanMungoBridge(encodedPayload){
+    try{
+      var payload=JSON.parse(decodeURIComponent(String(encodedPayload||'')));
+      if(!payload || Number(payload.v)!==1 || !Array.isArray(payload.symptoms))return false;
+      localStorage.setItem(SAN_MUNGO_BRIDGE_KEY,JSON.stringify({
+        createdAt:Date.now(),
+        payload:payload
+      }));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  /* Il link apre una pagina ForumFree che contiene il tool San Mungo in un iframe:
+     il frammento #ffmed resta come fallback, mentre localStorage permette all'iframe
+     del tool (sullo stesso dominio GitHub degli altri tool) di recuperare davvero
+     i dati anche quando ForumFree non inoltra hash/query all'iframe. */
+  document.addEventListener('click',function(ev){
+    var el=ev.target && ev.target.closest ? ev.target.closest('a[data-ffmed]') : null;
+    if(!el)return;
+    medStoreSanMungoBridge(el.getAttribute('data-ffmed')||'');
+  },true);
 
   function medSanMungoPayload(type,cause,healthLost,healthTotal,pct,symptoms){
     return {
@@ -3459,9 +3484,10 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       return '<div class="medical-actions">'+direct+'</div>';
     }
     var payload=medSanMungoPayload(type,cause,healthLost,healthTotal,pct,list);
-    var href=SAN_MUNGO_URL+'#ffmed='+encodeURIComponent(JSON.stringify(payload));
+    var encoded=encodeURIComponent(JSON.stringify(payload));
+    var href=SAN_MUNGO_URL+'#ffmed='+encoded;
     return '<div class="medical-transfer-note"><strong>Importazione per praticità OFFGame.</strong> I Sintomi possono essere trasferiti alla cartella del San Mungo, ma questo <strong>non significa che il PG li abbia riconosciuti ONGame</strong>. Se la cura richiede una Guarigione Attiva, i Sintomi devono comunque essere individuati attraverso la Diagnosi prevista dal regolamento.</div>'+
-      '<div class="medical-actions"><a class="medical-action-link" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> Apri e importa nel San Mungo</a>'+direct+'</div>';
+      '<div class="medical-actions"><a class="medical-action-link" data-ffmed="'+escapeHtml(encoded)+'" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> Apri e importa nel San Mungo</a>'+direct+'</div>';
   }
 
   function medBuildResult(type,causeName,healthLost,healthTotal){
