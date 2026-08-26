@@ -3485,13 +3485,36 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   var SAN_MUNGO_URL='https://felixfelicisharrypottergdr.forumfree.it/?pag=sanmungo';
-  var SAN_MUNGO_BRIDGE_KEY='ffgdr_clinical_import_v1';
+  var SAN_MUNGO_BRIDGE_PREFIX='ffgdr_clinical_import_v2_';
+
+  function medNewSanMungoImportId(){
+    return 'sm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+  }
+
+  function medCleanupSanMungoQueue(){
+    var now=Date.now();
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var key=localStorage.key(i)||'';
+        if(key.indexOf(SAN_MUNGO_BRIDGE_PREFIX)!==0)continue;
+        var box=null;
+        try{box=JSON.parse(localStorage.getItem(key)||'');}catch(e){box=null;}
+        if(!box || !box.payload || now-Number(box.createdAt||0)>30*60*1000){
+          localStorage.removeItem(key);i--;
+        }
+      }
+    }catch(e){}
+  }
 
   function medStoreSanMungoBridge(encodedPayload){
     try{
       var payload=JSON.parse(decodeURIComponent(String(encodedPayload||'')));
       if(!payload || Number(payload.v)!==1 || !Array.isArray(payload.symptoms))return false;
-      localStorage.setItem(SAN_MUNGO_BRIDGE_KEY,JSON.stringify({
+      medCleanupSanMungoQueue();
+      var importId=String(payload.importId||'').replace(/[^a-zA-Z0-9_-]/g,'');
+      if(!importId)importId=medNewSanMungoImportId();
+      payload.importId=importId;
+      localStorage.setItem(SAN_MUNGO_BRIDGE_PREFIX+importId,JSON.stringify({
         createdAt:Date.now(),
         payload:payload
       }));
@@ -3514,6 +3537,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function medSanMungoPayload(type,cause,healthLost,healthTotal,pct,symptoms,targetLabel){
     return {
       v:1,
+      importId:medNewSanMungoImportId(),
       source:'riuscita-conoscenze',
       type:type||'',
       cause:cause&&cause.name?cause.name:'',
@@ -3534,7 +3558,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var payload=medSanMungoPayload(type,cause,healthLost,healthTotal,pct,list,targetLabel);
     var encoded=encodeURIComponent(JSON.stringify(payload));
     var href=SAN_MUNGO_URL+'#ffmed='+encoded;
-    return '<div class="medical-transfer-note"><strong>Importazione per praticità OFFGame.</strong> I Sintomi possono essere trasferiti alla cartella del San Mungo, ma questo <strong>non significa che il PG li abbia riconosciuti ONGame</strong>. Se la cura richiede una Guarigione Attiva, i Sintomi devono comunque essere individuati attraverso la Diagnosi prevista dal regolamento.</div>'+
+    return '<div class="medical-transfer-note"><strong>Importazione per praticità OFFGame.</strong> I Sintomi possono essere trasferiti alla cartella del San Mungo, ma questo <strong>non significa che il PG li abbia riconosciuti ONGame</strong>. Se la cura richiede una Guarigione Attiva, i Sintomi devono comunque essere individuati attraverso la Diagnosi prevista dal regolamento.'+(targetLabel?' <strong>Ogni bersaglio viene inviato come cartella separata</strong>, così i Sintomi di PG diversi non vengono mescolati.':'')+'</div>'+
       '<div class="medical-actions"><a class="medical-action-link" data-ffmed="'+escapeHtml(encoded)+'" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> '+(targetLabel?'Importa '+escapeHtml(targetLabel)+' nel San Mungo':'Apri e importa nel San Mungo')+'</a>'+direct+'</div>';
   }
 
