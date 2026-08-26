@@ -734,6 +734,20 @@
     font-size:21px;
     line-height:1.1;
   }
+  #schedaCard .knowledge-link-main{flex:1 1 auto;min-width:0;}
+  #schedaCard .knowledge-effect-summary{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;
+    font-size:12.5px;line-height:1.35;color:#654e34;
+  }
+  #schedaCard .knowledge-effect-label{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:#765b3b;margin-right:2px;
+  }
+  #schedaCard .knowledge-effect-chip{
+    display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid rgba(184,154,90,.65);
+    border-radius:999px;background:#fffdf6;color:#4f3a26;white-space:nowrap;
+  }
+  #schedaCard .knowledge-effect-chip strong{color:var(--maroon-deep);}
   #schedaCard .knowledge-link-note{display:none;}
   #schedaCard .knowledge-link-button{
     flex:0 0 auto;
@@ -1238,6 +1252,20 @@
     font-size:14px;
     line-height:1.5;
   }
+  .force-target-details{
+    margin-top:14px;border:1px solid var(--line);border-radius:9px;background:rgba(255,253,246,.58);overflow:hidden;
+  }
+  .force-target-details > summary{
+    cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:12px 14px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--maroon-deep);
+    background:rgba(233,217,172,.28);
+  }
+  .force-target-details > summary::-webkit-details-marker{display:none;}
+  .force-target-details > summary::after{content:'▾';font-family:Georgia,serif;font-size:17px;color:#765b3b;transition:transform .15s ease;}
+  .force-target-details[open] > summary::after{transform:rotate(180deg);}
+  .force-target-details-summary-note{font-family:Georgia,'Times New Roman',serif;font-size:12px;font-weight:normal;letter-spacing:0;color:#735c3f;}
+  .force-target-details-body{padding:0 14px 14px;}
+  .force-target-details .force-input-grid{margin-top:13px;}
   .force-damage-values{display:flex;gap:10px;flex-wrap:wrap;margin-top:7px;}
   .force-damage-pill{
     flex:1 1 190px;
@@ -1253,7 +1281,7 @@
   .force-target-effect{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf6;}
   .force-target-effect b{color:var(--maroon-deep);font-size:17px;}
 
-  /* ===== v36 — BERSAGLI MULTIPLI + AVVISO UN PAZIENTE ALLA VOLTA ===== */
+  /* ===== v37 — BERSAGLI IN TENDINA + AVVISO UN PAZIENTE ALLA VOLTA ===== */
   .force-multi-manager{
     margin-top:14px;
     padding:13px 14px;
@@ -1514,38 +1542,47 @@
             <option value="5">Livello 5</option>
           </select>
         </div>
-        <div class="force-field" id="forceSingleResistanceField">
-          <label for="forceTargetResistance">Resistenza del bersaglio <span class="force-status-tag">facoltativa</span></label>
-          <input type="number" id="forceTargetResistance" min="0.1" step="0.5" inputmode="decimal" placeholder="Solo se vuoi calcolare danni/malus">
-        </div>
-        <div class="force-field" id="forceSingleHealthField">
-          <label for="forceTargetHealth">Salute totale del bersaglio <span class="force-status-tag">necessaria per % e Sintomi</span></label>
-          <input type="number" id="forceTargetHealth" min="1" step="1" inputmode="numeric" placeholder="Es. 75 Punti Salute">
-        </div>
       </div>
 
-      <div class="force-multi-manager hidden" id="forceMultiTargetManager">
-        <div class="force-multi-head">
-          <div>
-            <div class="force-multi-title" id="forceMultiTargetTitle">Bersagli dell’azione</div>
-            <p class="force-multi-note" id="forceMultiTargetNote"></p>
-          </div>
-        </div>
-        <div class="force-target-count-buttons" id="forceTargetCountButtons"></div>
-        <div class="force-ardor-budget hidden" id="forceArdorBudget"></div>
-        <div class="force-patient-notice hidden" id="forceMultiPatientNotice"><strong>Un paziente alla volta.</strong> Il tool di Medimagia gestisce una sola cartella clinica per volta. Se hai colpito più bersagli, importa e completa un paziente prima di passare al successivo: non esportare tutti i bersagli insieme.</div>
-        <div class="force-target-list" id="forceTargetList"></div>
-      </div>
-
-      <p class="note">Inserisci solo numeri e usa i valori già comprensivi di eventuali bonus/malus del PG. La Fatica attuale viene rapportata alla Fatica totale; sotto il 10% il moltiplicatore resta comunque 0,1. La Resistenza serve per calcolare il danno/malus sul bersaglio. <strong>Se l’Incantesimo toglie Salute, inserisci anche la Salute totale del bersaglio:</strong> nello stesso risultato compariranno automaticamente Punti Salute persi, percentuale di Salute persa, fascia medimagica e Sintomi associati a quell’Incantesimo. Quando i Sintomi sono determinabili compare anche il collegamento per trasferirli al tool del San Mungo come dati OFFGame.</p>
       <div class="force-result-panel" id="forceResultPanel">
         <p class="force-result-empty" id="forceResultEmpty">Completa i valori del PG e seleziona la fascia di riuscita.</p>
         <div class="hidden" id="forceResultBody">
           <div class="force-result-main"><span>Forza complessiva</span><strong class="force-result-number" id="forceResultValue">—</strong></div>
           <div class="force-breakdown" id="forceBreakdown"></div>
-          <div class="force-damage-box hidden" id="forceDamageBox"></div>
         </div>
       </div>
+
+      <details class="force-target-details" id="forceTargetDetails">
+        <summary><span>Bersagli ed effetti</span><span class="force-target-details-summary-note">Resistenza, Salute e conseguenze per ciascun bersaglio</span></summary>
+        <div class="force-target-details-body">
+          <div class="force-input-grid" id="forceSingleTargetFields">
+            <div class="force-field" id="forceSingleResistanceField">
+              <label for="forceTargetResistance">Resistenza del bersaglio <span class="force-status-tag">facoltativa</span></label>
+              <input type="number" id="forceTargetResistance" min="0.1" step="0.5" inputmode="decimal" placeholder="Solo se vuoi calcolare danni/malus">
+            </div>
+            <div class="force-field" id="forceSingleHealthField">
+              <label for="forceTargetHealth">Salute totale del bersaglio <span class="force-status-tag">necessaria per % e Sintomi</span></label>
+              <input type="number" id="forceTargetHealth" min="1" step="1" inputmode="numeric" placeholder="Es. 75 Punti Salute">
+            </div>
+          </div>
+
+          <div class="force-multi-manager hidden" id="forceMultiTargetManager">
+            <div class="force-multi-head">
+              <div>
+                <div class="force-multi-title" id="forceMultiTargetTitle">Bersagli dell’azione</div>
+                <p class="force-multi-note" id="forceMultiTargetNote"></p>
+              </div>
+            </div>
+            <div class="force-target-count-buttons" id="forceTargetCountButtons"></div>
+            <div class="force-ardor-budget hidden" id="forceArdorBudget"></div>
+            <div class="force-patient-notice hidden" id="forceMultiPatientNotice"><strong>Un paziente alla volta.</strong> Il tool di Medimagia gestisce una sola cartella clinica per volta. Se hai colpito più bersagli, importa e completa un paziente prima di passare al successivo: non esportare tutti i bersagli insieme.</div>
+            <div class="force-target-list" id="forceTargetList"></div>
+          </div>
+
+          <p class="note">La Forza dell’evocazione resta unica. Qui inserisci soltanto i dati del bersaglio o dei bersagli. <strong>Se l’Incantesimo toglie Salute, indica anche la Salute totale:</strong> il tool calcola Punti Salute persi, percentuale, fascia medimagica e Sintomi, con importazione separata nel San Mungo.</p>
+          <div class="force-damage-box hidden" id="forceDamageBox"></div>
+        </div>
+      </details>
     </div>
 
   </div>
@@ -1924,6 +1961,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
 
   /* ===== PONTE ERBOLOGIA ↔ RIUSCITA DELLE CONOSCENZE v24 ===== */
+  var ERB_TOOL_URL='https://felixfelicisharrypottergdr.forumfree.it/?pag=erbologia';
   var ERB_BRIDGE_REQUEST_PREFIX='ffgdr_erb_knowledge_request_v2_';
   var ERB_BRIDGE_RESPONSE_PREFIX='ffgdr_erb_knowledge_response_v2_';
   var ERB_BRIDGE_LEGACY_REQUEST_KEY='ffgdr_erb_knowledge_request_v1';
@@ -1932,7 +1970,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   var ERB_KNOWLEDGE_PHASES={'herbivicus':'Ricerca Piante Magiche','pollice verde':'Interazione','sradico':'Esportazione','planto':'Collocazione','pax':'Interazione'};
   function erbBridgeSimpleName(v){return mzBridgeSimpleName(v);}
   function erbBridgeFindEntry(name){return mzBridgeFindEntry(name);}
-  function erbIsErbologiaEntry(entry){return !!(entry&&ERB_KNOWLEDGE_PHASES[erbBridgeSimpleName(entry.name)]);}
+  function erbIsErbologiaEntry(entry){if(!entry)return false;var source=String(entry.source||'').toLowerCase();return source.indexOf('erbolog')!==-1 || !!ERB_KNOWLEDGE_PHASES[erbBridgeSimpleName(entry.name)];}
   function erbBridgeRequestMatches(entry){return !!(erbBridgeRequest&&entry&&erbBridgeSimpleName(erbBridgeRequest.knowledge)===erbBridgeSimpleName(entry.name));}
   function erbBridgePhaseLabel(req,entry){if(req&&req.phase){var m={ricerca:'Ricerca Piante Magiche',interazione:'Interazione',esportazione:'Esportazione',collocazione:'Collocazione',coltivazione:'Coltivazione',pax:'Interazione'};if(m[req.phase])return m[req.phase];}return ERB_KNOWLEDGE_PHASES[erbBridgeSimpleName(entry&&entry.name)]||'Erbologia';}
   function erbBridgeSetCardStatus(msg,kind){var el=qs('erbBridgeStatus');if(!el)return;el.className='erb-r-bridge-status'+(kind?' '+kind:'');el.textContent=msg||'';}
@@ -1946,7 +1984,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var html=linked
       ?('<strong>Richiesta dall’Erbologia · '+escapeHtml(phase)+'.</strong><br>La Conoscenza e i dati compatibili del PG sono già impostati. Prepara il codice del tiro e lancialo sul forum; poi clicca qui la fascia di riuscita ottenuta (0% / 33% / 66% / 100%): verrà riportata automaticamente nella riga di Erbologia da cui sei partito.')
       :('<strong>Questa Conoscenza può essere utilizzata in Erbologia.</strong><br>Prepara qui il codice del tiro e lancialo sul forum. Usa poi la fascia di riuscita ottenuta (0% / 33% / 66% / 100%) nel passaggio corrispondente della Guida all’Erbologia.');
-    if(ret)html+='<div class="erb-r-bridge-actions"><a class="erb-r-bridge-link" href="'+escapeHtml(ret)+'" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-pagelines" aria-hidden="true"></i> Torna all’Erbologia</a></div>';
+    var erbTarget=ret||ERB_TOOL_URL;
+    html+='<div class="erb-r-bridge-actions"><a class="erb-r-bridge-link" href="'+escapeHtml(erbTarget)+'" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-pagelines" aria-hidden="true"></i> '+(linked?'Torna all’Erbologia':'Vai all’Erbologia')+'</a></div>';
     if(linked)html+='<div class="erb-r-bridge-status" id="erbBridgeStatus">Collegamento attivo con la richiesta di Erbologia.</div>';
     body.innerHTML=html;
   }
@@ -3013,6 +3052,69 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return base + encodeURI(anchor);
   }
 
+  function knowledgeKnownParamsFromText(raw){
+    var text=String(raw||'');
+    var known=['Salute','Destrezza','Fatica','Resistenza','Potenza','Acume','Percezione','Volontà','Empatia','Tecnica'];
+    var out=[];
+    for(var i=0;i<known.length;i++){
+      var re=new RegExp('\\b'+known[i].replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+      if(re.test(text))out.push(known[i]);
+    }
+    return out;
+  }
+
+  function knowledgeEntryTargetRaw(entry){
+    var html=String(entry&&entry.html||'');
+    var re=/<c[^>]*>\s*Parametr(?:o(?:\s+del\s+bersaglio)?\s+(?:intaccato|influenzato)|i(?:\s+del\s+bersaglio)?\s+(?:intaccati|influenzati))\s*:\s*<\/c>([\s\S]*?)(?=<c\b|<b\b|<details\b|<\/details>|<div\b|<table\b|$)/i;
+    var m=html.match(re);
+    return m?forceStripHtml(m[1]).replace(/^\s*[:\-]\s*/,'').trim():'';
+  }
+
+  function knowledgeSelfEffects(entry){
+    var text=cleanText(forceStripHtml(entry&&entry.html||''));
+    if(!text)return [];
+    var params=['Salute','Destrezza','Fatica','Resistenza','Potenza','Acume','Percezione','Volontà','Empatia','Tecnica'];
+    var chunks=text.split(/(?:[.!?]+\s+|\n+)/);
+    var out=[];
+    for(var i=0;i<chunks.length;i++){
+      var c=chunks[i];
+      if(!/evocatore|\bPG\b/i.test(c))continue;
+      /* Evita di attribuire all'evocatore un effetto descritto chiaramente come subito dal bersaglio. */
+      if(/bersaglio/i.test(c) && !/(?:evocatore|\bPG\b)[^.!?]{0,90}(?:bonus|malus|aument|increment|riduc|dimin|recuper|riprist|perd|consum)/i.test(c))continue;
+      var sign='';
+      if(/\bbonus\b|aument|increment|recuper|riprist|potenz/i.test(c))sign='+';
+      if(/\bmalus\b|riduc|dimin|perd|consum|sottra/i.test(c))sign='-';
+      if(!sign)continue;
+      for(var p=0;p<params.length;p++){
+        if(new RegExp('\\b'+params[p]+'\\b','i').test(c)){
+          var key=sign+'|'+params[p];
+          if(!out.some(function(x){return x.key===key;}))out.push({key:key,sign:sign,param:params[p]});
+        }
+      }
+    }
+    return out;
+  }
+
+  function renderKnowledgeEffectSummary(entry){
+    if(!entry)return '';
+    var chips=[];
+    var raw=knowledgeEntryTargetRaw(entry);
+    if(raw && raw!=='//' && raw!=='—'){
+      var params=knowledgeKnownParamsFromText(raw);
+      if(!params.length)params=[raw.replace(/\([^)]*\)/g,'').trim()];
+      for(var i=0;i<params.length;i++){
+        var sign=combatSignForKnowledge(params[i]);
+        chips.push('<span class="knowledge-effect-chip"><strong>'+escapeHtml(sign)+'</strong> '+escapeHtml(params[i])+' <span>del bersaglio</span></span>');
+      }
+    }
+    var self=knowledgeSelfEffects(entry);
+    for(var j=0;j<self.length;j++){
+      chips.push('<span class="knowledge-effect-chip"><strong>'+escapeHtml(self[j].sign)+'</strong> '+escapeHtml(self[j].param)+' <span>dell’evocatore</span></span>');
+    }
+    if(!chips.length)return '<div class="knowledge-effect-summary"><span class="knowledge-effect-label">Agisce su</span><span class="knowledge-effect-chip">effetto descritto nelle Specifiche</span></div>';
+    return '<div class="knowledge-effect-summary"><span class="knowledge-effect-label">Agisce su</span>'+chips.join('')+'</div>';
+  }
+
   function renderKnowledgeReference(entry){
     var url = getKnowledgeRuleUrl(entry);
     var title = cleanKnowledgeDisplayName(entry.name);
@@ -3024,7 +3126,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       ? '<a class="knowledge-link-button" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Apri la voce nel regolamento</a>'
       : '<div class="note">Link al regolamento non disponibile per questa fonte.</div>';
     return formula + '<div class="knowledge-link-box">' +
-      '<div class="knowledge-link-title">' + escapeHtml(title) + '</div>' +
+      '<div class="knowledge-link-main"><div class="knowledge-link-title">' + escapeHtml(title) + '</div>' + renderKnowledgeEffectSummary(entry) + '</div>' +
       link +
       '</div>';
   }
@@ -3756,10 +3858,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   function forceRenderMultiTargetManager(maxTargets){
-    var manager=qs('forceMultiTargetManager'), singleR=qs('forceSingleResistanceField'), singleH=qs('forceSingleHealthField');
+    var manager=qs('forceMultiTargetManager'), singleR=qs('forceSingleResistanceField'), singleH=qs('forceSingleHealthField'), singleWrap=qs('forceSingleTargetFields');
     if(!manager)return false;
     var multi=maxTargets>1;
     manager.classList.toggle('hidden',!multi);
+    if(singleWrap)singleWrap.classList.toggle('hidden',multi);
     if(singleR)singleR.classList.toggle('hidden',multi);
     if(singleH)singleH.classList.toggle('hidden',multi);
     var patientNotice=qs('forceMultiPatientNotice');
@@ -3992,7 +4095,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var baseNumerator=param*base*fatigueFactor*skillFactor*successFactor*externalForceFactor;
     if(isMultiTargets){
       dmgBox.className='force-damage-box';
-      dmgBox.innerHTML='<div class="force-target-title">Effetti separati per bersaglio</div><div class="note">La Forza dell’evocazione è unica; Resistenza, Salute, esito e conseguenze medimagiche vengono calcolati separatamente per ciascun bersaglio.</div>';
+      dmgBox.innerHTML='';
       forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell);
     }else if(resistance!==null && resistance>0){
       var rawEffect=Math.pow(Math.max(0,baseNumerator/resistance),.6);
