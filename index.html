@@ -915,6 +915,14 @@
     border-radius:999px;background:#fffaf0;color:#4a351f;font-size:12px;white-space:nowrap;
   }
   .inline-outcome-note{margin-top:6px;color:#7a664b;font-style:italic;font-size:11.5px;}
+  button.inline-outcome-chip{font-family:Georgia,"Times New Roman",serif;cursor:pointer;}
+  button.inline-outcome-chip:hover{border-color:var(--maroon);background:#f5ead0;}
+  button.inline-outcome-chip.is-selected{border:2px solid var(--high);background:#f4fbea;color:#274d20;box-shadow:0 0 0 3px rgba(57,102,44,.10);}
+  .rule-outcome-row.is-current-outcome{position:relative;background:#f4fbea;box-shadow:inset 4px 0 0 var(--high);}
+  .rule-outcome-row.is-current-outcome .rule-outcome-pct{color:var(--high);}
+  .rule-outcome-selected{display:block;margin-top:3px;font-size:10px;line-height:1.1;text-transform:uppercase;letter-spacing:.04em;color:var(--high);}
+  .rule-outcome-row.is-other-outcome{opacity:.38;background:rgba(255,250,240,.42);}
+  .rule-outcome-row.is-other-outcome button,.rule-outcome-row.is-other-outcome input{pointer-events:none;}
   .modifier-item.mod-knowledge{border-left-color:var(--maroon-deep);}
   .modifier-item.mod-usage{border-left-color:#7c6b34;}
 
@@ -925,6 +933,7 @@
   .guide-return-card .guide-return-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 13px;border:1px solid var(--maroon);border-radius:6px;background:var(--maroon);color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:14px;}
   .guide-return-card .guide-return-link:hover{background:var(--maroon-deep);}
 
+  /* ===== v26 — flusso esito → effetti; collegamenti tra tool in pagina separata ===== */
   /* ===== PONTE AVANZATO ERBOLOGIA ↔ RIUSCITA v24 ===== */
   #erbologiaBridgeCard .step-label{margin-bottom:10px}.erb-r-bridge-box{padding:12px 14px;border:1px solid #8eaa70;border-left:4px solid #668c48;border-radius:7px;background:rgba(145,177,104,.14);color:#3f3424;line-height:1.48}.erb-r-bridge-box strong{color:var(--maroon-deep)}.erb-r-bridge-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px;align-items:center}.erb-r-bridge-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:1px solid #536e3b;border-radius:6px;background:#668c48;color:#fff8e8;text-decoration:none;font-family:Georgia,"Times New Roman",serif;font-size:13px}.erb-r-bridge-link:hover{filter:brightness(1.08)}.erb-r-bridge-status{margin-top:9px;font-size:13px;color:#5f4b31}.erb-r-bridge-status.ok{font-weight:700;color:#39662c}.erb-r-bridge-status.warn{font-weight:700;color:#892c0f}@media(max-width:640px){.erb-r-bridge-link{width:100%}}
 
@@ -943,7 +952,7 @@
 
   <div class="card guide-return-card hidden" id="guideReturnCard">
     <p class="guide-return-text" id="guideReturnText">Hai aperto Riuscita delle Conoscenze da un altro tool.</p>
-    <a class="guide-return-link" id="guideReturnLink" href="#"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span id="guideReturnLabel">Torna alla Guida</span></a>
+    <a class="guide-return-link" id="guideReturnLink" href="#" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i><span id="guideReturnLabel">Apri la Guida</span></a>
   </div>
 
 
@@ -1016,13 +1025,6 @@
     </select>
   </div>
 
-  <div id="autoDadiExtraWrap" class="card hidden">
-    <p class="step-label auto-extra-title"><span class="num"><i class="fa-solid fa-dice" aria-hidden="true"></i></span>Effetti legati alla riuscita</p>
-    <p class="note auto-extra-note">Il tool mostra soltanto la parte delle Specifiche che riguarda il PG selezionato. Le righe con un dado hanno il codice copiabile e un campo dove riportare il risultato del dado secondario.</p>
-    <div class="dado-extra-list" id="dadoExtraList"></div>
-  </div>
-
-
   <div class="card hidden" id="magizoologiaBridgeCard">
     <p class="step-label"><span class="num"><i class="fa-solid fa-paw" aria-hidden="true"></i></span>Collegamento Magizoologia</p>
     <div class="mz-bridge-box" id="magizoologiaBridgeBody"></div>
@@ -1062,8 +1064,8 @@
     <div id="diceActionWrap" class="hidden">
       <label class="field-label" for="diceCodeBox">Codice da incollare nel forum</label>
       <textarea id="diceCodeBox" readonly rows="7" style="width:100%; padding:10px 12px; font-family:'EB Garamond', serif; font-size:14px; border:1.5px solid var(--line); border-radius:8px; background:#fffdf6; color:var(--ink); resize:vertical;"></textarea>
-      <div id="inlineOutcomeLegend" class="inline-outcome-legend hidden"></div>
       <button class="roll-btn" id="copyCodeBtn" type="button">Copia codice dado</button>
+      <div id="inlineOutcomeLegend" class="inline-outcome-legend hidden"></div>
     </div>
   </div>
 
@@ -1098,6 +1100,12 @@
     <label class="field-label" for="modifierCodeBox">Riepilogo copiabile per il forum</label>
     <textarea id="modifierCodeBox" readonly rows="6"></textarea>
     <button class="roll-btn" id="copyModifiersBtn" type="button">Copia riepilogo utilizzo</button>
+  </div>
+
+  <div id="autoDadiExtraWrap" class="card hidden">
+    <p class="step-label auto-extra-title"><span class="num"><i class="fa-solid fa-dice" aria-hidden="true"></i></span>Effetti dell’esito ottenuto</p>
+    <p class="note auto-extra-note">Questa sezione compare dopo che hai indicato la fascia ottenuta sul forum. Mostra soltanto le Specifiche pertinenti al PG selezionato e mette in evidenza la riga dell’esito effettivo; gli eventuali dadi secondari si gestiscono qui.</p>
+    <div class="dado-extra-list" id="dadoExtraList"></div>
   </div>
 
   <footer>Il dado viene risolto sul forum: qui prepari il codice e tieni traccia soltanto di costi, modificatori e consumi dell'utilizzo.</footer>
@@ -1253,18 +1261,14 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var linked=mzBridgeRequestMatches(entry);
     var html='';
     if(linked){
-      html+='<strong>Richiesta ricevuta dal tool di Magizoologia · '+escapeHtml(phase)+'.</strong><br>'+
-        'La Conoscenza è stata preselezionata. Copia qui il dado e lancialo sul forum: <b>non devi riportare il numero in questo Generatore</b>. '+
-        'Quando torni a Magizoologia, indica lì direttamente la fascia di riuscita ottenuta (0% / 33% / 66% / 100%); l’eventuale dado secondario verrà gestito da quel tool.';
+      html+='<strong>Richiesta dalla Magizoologia · '+escapeHtml(phase)+'.</strong><br>'+        'La Conoscenza e i dati compatibili del PG sono già impostati. Prepara il codice del tiro e lancialo sul forum; '+        'poi clicca qui la fascia di riuscita ottenuta (0% / 33% / 66% / 100%): verrà riportata automaticamente nella riga di Magizoologia da cui sei partito. '+        'L’eventuale dado secondario resta gestito dalla Magizoologia.';
     }else{
-      html+='<strong>Questa Conoscenza è collegata a Magizoologia · '+escapeHtml(phase)+'.</strong><br>'+
-        'Prepara qui il tiro di riuscita, lanciarlo sul forum e usa poi la fascia ottenuta nel tool di Magizoologia.';
+      html+='<strong>Questa Conoscenza può essere utilizzata in Magizoologia.</strong><br>'+        'Prepara qui il codice del tiro e lancialo sul forum. Usa poi la fascia di riuscita ottenuta (0% / 33% / 66% / 100%) '+        'nel passaggio corrispondente della Guida alla Magizoologia.';
     }
     html+='<div class="mz-bridge-actions">'+
-      '<a class="mz-bridge-link" href="'+MZ_TOOL_URL+'" target="_top" rel="noopener"><i class="fa-solid fa-paw" aria-hidden="true"></i> Apri il tool di Magizoologia</a>';
-    html+='</div><div class="mz-bridge-status" id="mzBridgeStatus">'+
-      (linked?'Il collegamento resta associato alla stessa richiesta di Magizoologia.':'Il tool è stato aperto direttamente.')+
-      '</div>';
+      '<a class="mz-bridge-link" href="'+MZ_TOOL_URL+'" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-paw" aria-hidden="true"></i> Vai alla Magizoologia</a>';
+    html+='</div>';
+    if(linked)html+='<div class="mz-bridge-status" id="mzBridgeStatus">Collegamento attivo con la richiesta di Magizoologia.</div>';
     body.innerHTML=html;
     var resend=qs('mzBridgeResend');
     if(resend){
@@ -1384,7 +1388,19 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function erbBridgePhaseLabel(req,entry){if(req&&req.phase){var m={ricerca:'Ricerca Piante Magiche',interazione:'Interazione',esportazione:'Esportazione',collocazione:'Collocazione',coltivazione:'Coltivazione',pax:'Interazione'};if(m[req.phase])return m[req.phase];}return ERB_KNOWLEDGE_PHASES[erbBridgeSimpleName(entry&&entry.name)]||'Erbologia';}
   function erbBridgeSetCardStatus(msg,kind){var el=qs('erbBridgeStatus');if(!el)return;el.className='erb-r-bridge-status'+(kind?' '+kind:'');el.textContent=msg||'';}
   function erbSafeReturn(req){try{var raw=req&&req.returnUrl;if(!raw)return '';var u=new URL(raw,window.location.href);return (u.protocol==='http:'||u.protocol==='https:')?u.href:'';}catch(e){return '';}}
-  function erbBridgeUpdateCard(entry){var card=qs('erbologiaBridgeCard'),body=qs('erbologiaBridgeBody');if(!card||!body)return;if(!erbIsErbologiaEntry(entry)){card.className='card hidden';body.innerHTML='';return;}card.className='card';var linked=erbBridgeRequestMatches(entry),phase=erbBridgePhaseLabel(linked?erbBridgeRequest:null,entry),ret=linked?erbSafeReturn(erbBridgeRequest):'';var html=linked?('<strong>Richiesta ricevuta dal tool di Erbologia · '+escapeHtml(phase)+'.</strong><br>La Conoscenza e i dati compatibili del PG sono stati preselezionati. Prepara qui il codice del dado. Per i tiri non automatici, il risultato resta sul forum e la fascia 0% / 33% / 66% / 100% va poi usata nella riga di Erbologia da cui sei partito.'):('<strong>Questa Conoscenza è collegata a Erbologia · '+escapeHtml(phase)+'.</strong><br>Puoi preparare qui la riuscita e usare l’esito nel relativo passaggio del tool di Erbologia.');if(ret)html+='<div class="erb-r-bridge-actions"><a class="erb-r-bridge-link" href="'+escapeHtml(ret)+'" target="_top" rel="noopener"><i class="fa-brands fa-pagelines" aria-hidden="true"></i> Torna al tool di Erbologia</a></div>';html+='<div class="erb-r-bridge-status" id="erbBridgeStatus">'+(linked?'Collegamento associato alla stessa richiesta di Erbologia.':'Generatore aperto direttamente.')+'</div>';body.innerHTML=html;}
+  function erbBridgeUpdateCard(entry){
+    var card=qs('erbologiaBridgeCard'),body=qs('erbologiaBridgeBody');
+    if(!card||!body)return;
+    if(!erbIsErbologiaEntry(entry)){card.className='card hidden';body.innerHTML='';return;}
+    card.className='card';
+    var linked=erbBridgeRequestMatches(entry),phase=erbBridgePhaseLabel(linked?erbBridgeRequest:null,entry),ret=linked?erbSafeReturn(erbBridgeRequest):'';
+    var html=linked
+      ?('<strong>Richiesta dall’Erbologia · '+escapeHtml(phase)+'.</strong><br>La Conoscenza e i dati compatibili del PG sono già impostati. Prepara il codice del tiro e lancialo sul forum; poi clicca qui la fascia di riuscita ottenuta (0% / 33% / 66% / 100%): verrà riportata automaticamente nella riga di Erbologia da cui sei partito.')
+      :('<strong>Questa Conoscenza può essere utilizzata in Erbologia.</strong><br>Prepara qui il codice del tiro e lancialo sul forum. Usa poi la fascia di riuscita ottenuta (0% / 33% / 66% / 100%) nel passaggio corrispondente della Guida all’Erbologia.');
+    if(ret)html+='<div class="erb-r-bridge-actions"><a class="erb-r-bridge-link" href="'+escapeHtml(ret)+'" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-pagelines" aria-hidden="true"></i> Torna all’Erbologia</a></div>';
+    if(linked)html+='<div class="erb-r-bridge-status" id="erbBridgeStatus">Collegamento attivo con la richiesta di Erbologia.</div>';
+    body.innerHTML=html;
+  }
   function erbBridgeStoreResponse(payload,isResend){if(!payload||!payload.requestId)return false;try{localStorage.setItem(ERB_BRIDGE_RESPONSE_PREFIX+payload.requestId,JSON.stringify(payload));erbBridgeSetCardStatus((isResend?'Esito reinviato':'Esito inviato')+' a Erbologia: riuscita '+payload.pct+'%.','ok');return true;}catch(e){erbBridgeSetCardStatus('Trasferimento automatico non disponibile; riporta manualmente in Erbologia la riuscita '+payload.pct+'%.','warn');return false;}}
   function erbBridgePublishResult(pct,die,total,modifier){if(!erbBridgeRequest||!state.selectedEntry||!erbBridgeRequestMatches(state.selectedEntry))return;var payload={version:1,requestId:erbBridgeRequest.requestId,knowledge:state.selectedEntry.name,phase:erbBridgeRequest.phase||'',context:erbBridgeRequest.context||'',pct:Number(pct),die:Number(die),total:Number(total),modifier:Number(modifier||0),createdAt:Date.now()};erbBridgeLastResult=payload;erbBridgeStoreResponse(payload,false);}
   function bridgeSapienzaLevel(score){var n=Number(score||0);if(n<=0)return 'senza';if(n<=5)return 'lv1';if(n<=10)return 'lv2';if(n<=15)return 'lv3';if(n<=20)return 'lv4';return 'lv5';}
@@ -2259,8 +2275,14 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   function makeRuleOutcomeRow(entry,block,row){
-    var line=document.createElement('div'); line.className='rule-outcome-row';
-    var pct=document.createElement('div'); pct.className='rule-outcome-pct'; pct.textContent=row.pct+'%:'; line.appendChild(pct);
+    var line=document.createElement('div');
+    var hasOutcome=state.lastPct!==null && typeof state.lastPct!=='undefined';
+    var isCurrent=hasOutcome && Number(row.pct)===Number(state.lastPct);
+    line.className='rule-outcome-row'+(hasOutcome?(isCurrent?' is-current-outcome':' is-other-outcome'):'');
+    line.setAttribute('data-outcome-pct',String(row.pct));
+    var pct=document.createElement('div'); pct.className='rule-outcome-pct'; pct.textContent=row.pct+'%:';
+    if(isCurrent){var badge=document.createElement('span');badge.className='rule-outcome-selected';badge.textContent='Esito ottenuto';pct.appendChild(badge);}
+    line.appendChild(pct);
     var value=document.createElement('div'); value.className='rule-outcome-value';
     if(!row.formula){ value.textContent=row.value; line.appendChild(value); return line; }
 
@@ -2318,6 +2340,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var wrap=qs('autoDadiExtraWrap'),list=qs('dadoExtraList'); list.innerHTML='';
     var blocks=extractAudienceRuleBlocks(entry),rolls=entry&&entry.extraRolls?entry.extraRolls:[];
     if(!blocks.length&&!rolls.length){ wrap.className='card hidden'; sendHeightSoon(); return; }
+    if(state.lastPct===null || typeof state.lastPct==='undefined'){ wrap.className='card hidden'; sendHeightSoon(); return; }
 
     var formulasInAudience={};
     for(var bi=0;bi<blocks.length;bi++)for(var oi=0;oi<blocks[bi].outcomes.length;oi++)if(blocks[bi].outcomes[oi].formula)formulasInAudience[normalizeDiceFormula(blocks[bi].outcomes[oi].formula)]=true;
@@ -2886,15 +2909,28 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var box=qs('inlineOutcomeLegend');
     if(!box){ return; }
     if(!table || table==='AUTO'){ box.className='inline-outcome-legend hidden'; box.innerHTML=''; return; }
-    var agg=kbAggregate(), rows=effectiveOutcomeRanges(table,agg), html='<strong>Esito immediato del dado sul forum</strong><div class="inline-outcome-chips">';
+    var agg=kbAggregate(), rows=effectiveOutcomeRanges(table,agg), html='<strong>Dopo il tiro sul forum, clicca la fascia corrispondente al risultato</strong><div class="inline-outcome-chips">';
     for(var i=0;i<rows.length;i++){
       var range=(rows[i].lo===rows[i].hi)?String(rows[i].lo):(rows[i].lo+'–'+rows[i].hi);
-      html+='<span class="inline-outcome-chip"><b>'+range+'</b> → '+rows[i].pct+'%</span>';
+      var selected=Number(state.lastPct)===Number(rows[i].pct);
+      html+='<button type="button" class="inline-outcome-chip'+(selected?' is-selected':'')+'" data-outcome-pct="'+rows[i].pct+'"><b>'+range+'</b> → '+rows[i].pct+'%</button>';
     }
-    html+='</div><div class="inline-outcome-note">Le fasce qui sopra leggono direttamente il numero uscito sul forum';
-    if(agg.rollDelta!==0){ html+=' e includono già il modificatore '+escapeHtml(kbSigned(agg.rollDelta)); }
-    html+='. Non devi riportare il risultato in questo tool.</div>';
+    html+='</div><div class="inline-outcome-note">Non serve riscrivere il numero del dado: scegli soltanto la fascia che lo comprende';
+    if(agg.rollDelta!==0){ html+='; le fasce includono già il modificatore '+escapeHtml(kbSigned(agg.rollDelta)); }
+    html+='. Gli effetti specifici compariranno in fondo alla pagina con la riga corretta evidenziata.</div>';
     box.innerHTML=html; box.className='inline-outcome-legend';
+    box.querySelectorAll('[data-outcome-pct]').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var pct=Number(btn.getAttribute('data-outcome-pct'));
+        if([0,33,66,100].indexOf(pct)<0)return;
+        state.lastPct=pct;
+        renderInlineOutcomeLegend(table);
+        if(state.selectedEntry)renderAutoExtraRolls(state.selectedEntry);
+        mzBridgePublishResult(pct,0,0,agg.rollDelta||0);
+        erbBridgePublishResult(pct,0,0,agg.rollDelta||0);
+        sendHeightSoon();
+      });
+    });
   }
 
   function buildDiceCode(){
@@ -3182,8 +3218,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   if(!card||!link||!label)return;
   var isM=from==='magizoologia';
   link.href=u.href;
-  label.textContent=isM?'Torna alla Guida alla Magizoologia':'Torna alla Guida all’Erbologia';
-  if(text)text.textContent='Quando hai finito qui, puoi tornare esattamente al tool da cui sei arrivato, mantenendo la sessione aperta.';
+  label.textContent=isM?'Apri la Guida alla Magizoologia':'Apri la Guida all’Erbologia';
+  if(text)text.textContent='Il tool di provenienza resta separato: puoi riaprirlo in un’altra pagina senza sostituire Riuscita delle Conoscenze.';
   card.classList.remove('hidden');
   try{ if(typeof sendHeightSoon==='function')sendHeightSoon(); }catch(e){}
 })();
