@@ -1253,7 +1253,7 @@
   .force-target-effect{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf6;}
   .force-target-effect b{color:var(--maroon-deep);font-size:17px;}
 
-  /* ===== v34 — FIX SELETTORE BERSAGLI MULTIPLI ===== */
+  /* ===== v35 — BERSAGLI MULTIPLI + EXPORT SAN MUNGO RIPRISTINATO ===== */
   .force-multi-manager{
     margin-top:14px;
     padding:13px 14px;
@@ -3552,14 +3552,28 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function medSanMungoBridgeHtml(type,cause,healthLost,healthTotal,pct,symptoms,targetLabel){
     var list=(symptoms||[]).filter(function(s){return s&&s.name&&/^X{1,5}$/.test(String(s.class||''));});
     var direct='<a class="medical-action-link secondary" href="'+SAN_MUNGO_URL+'" target="_blank" rel="noopener"><i class="fa-solid fa-hospital" aria-hidden="true"></i> Apri il San Mungo</a>';
-    if(!list.length){
+
+    /* v35: il pulsante di esportazione non dipende più dalla presenza di Sintomi.
+       Se il danno di Salute è stato calcolato, il pacchetto viene sempre creato:
+       con i Sintomi quando determinabili, oppure con i soli dati di Salute. */
+    var canExport=Number(healthTotal)>0 && Number(healthLost)>=0;
+    if(!canExport){
       return '<div class="medical-actions">'+direct+'</div>';
     }
+
     var payload=medSanMungoPayload(type,cause,healthLost,healthTotal,pct,list,targetLabel);
     var encoded=encodeURIComponent(JSON.stringify(payload));
     var href=SAN_MUNGO_URL+'#ffmed='+encoded;
-    return '<div class="medical-transfer-note"><strong>Importazione per praticità OFFGame.</strong> I Sintomi possono essere trasferiti alla cartella del San Mungo, ma questo <strong>non significa che il PG li abbia riconosciuti ONGame</strong>. Se la cura richiede una Guarigione Attiva, i Sintomi devono comunque essere individuati attraverso la Diagnosi prevista dal regolamento.'+(targetLabel?' <strong>Ogni bersaglio viene inviato come cartella separata</strong>, così i Sintomi di PG diversi non vengono mescolati.':'')+'</div>'+
-      '<div class="medical-actions"><a class="medical-action-link" data-ffmed="'+escapeHtml(encoded)+'" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> '+(targetLabel?'Importa '+escapeHtml(targetLabel)+' nel San Mungo':'Apri e importa nel San Mungo')+'</a>'+direct+'</div>';
+    var hasSymptoms=list.length>0;
+    var exportLabel=targetLabel
+      ? ('Importa '+escapeHtml(targetLabel)+' nel San Mungo')
+      : 'Apri e importa nel San Mungo';
+    var note=hasSymptoms
+      ? '<strong>Importazione per praticità OFFGame.</strong> Verranno trasferiti <strong>danno di Salute e Sintomi</strong>. Questo <strong>non significa che il PG abbia riconosciuto i Sintomi ONGame</strong>: se la cura richiede una Guarigione Attiva, devono comunque essere individuati attraverso la Diagnosi prevista dal regolamento.'
+      : '<strong>Importazione per praticità OFFGame.</strong> Verrà trasferito il <strong>danno di Salute</strong>. Per questa fascia non risultano Sintomi esportabili automaticamente; potrai comunque completarli nel San Mungo se necessario.';
+    if(targetLabel){note+=' <strong>Ogni bersaglio viene inviato come cartella separata</strong>, così i dati di PG diversi non vengono mescolati.';}
+    return '<div class="medical-transfer-note">'+note+'</div>'+
+      '<div class="medical-actions"><a class="medical-action-link" data-ffmed="'+escapeHtml(encoded)+'" href="'+escapeHtml(href)+'" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> '+exportLabel+'</a>'+direct+'</div>';
   }
 
   function medBuildResult(type,causeName,healthLost,healthTotal,targetLabel){
