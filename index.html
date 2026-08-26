@@ -1253,7 +1253,7 @@
   .force-target-effect{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf6;}
   .force-target-effect b{color:var(--maroon-deep);font-size:17px;}
 
-  /* ===== v32 — BERSAGLI MULTIPLI ===== */
+  /* ===== v34 — FIX SELETTORE BERSAGLI MULTIPLI ===== */
   .force-multi-manager{
     margin-top:14px;
     padding:13px 14px;
@@ -3665,36 +3665,50 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
 
   function forcePctLineMatches(line,pct){
     var t=String(line||'').replace(/,/g,'.');
-    if(new RegExp('(?:^|\\D)'+pct+'\\s*%').test(t))return true;
-    var ranges=t.match(/(\\d+)\\s*%?\\s*[-–/]\\s*(\\d+)\\s*%/g)||[];
+    var p=Number(pct);
+    if(!Number.isFinite(p))return false;
+
+    /* Valore singolo: “100%”, “66%”, ecc. */
+    if(new RegExp('(?:^|\\D)'+p+'\\s*%').test(t))return true;
+
+    /* Fasce come “33-66%”, “33–66%” o “33/66%”. */
+    var ranges=t.match(/(\d+)\s*%?\s*[-–/]\s*(\d+)\s*%/g)||[];
     for(var i=0;i<ranges.length;i++){
-      var m=ranges[i].match(/(\\d+)\\s*%?\\s*[-–/]\\s*(\\d+)\\s*%/);
-      if(m && pct>=Number(m[1]) && pct<=Number(m[2]))return true;
+      var m=ranges[i].match(/(\d+)\s*%?\s*[-–/]\s*(\d+)\s*%/);
+      if(m && p>=Number(m[1]) && p<=Number(m[2]))return true;
     }
     return false;
   }
 
   function forceAudienceKind(line){
     var l=String(line||'').toLowerCase();
-    if(/pg stud/.test(l))return 'studente';
-    if(/pg adult/.test(l) && /senza sapienza/.test(l))return 'adulto-senza';
-    if(/pg adult/.test(l) && /con sapienza/.test(l))return 'adulto-con';
+    if(/pg\s+stud/.test(l))return 'studente';
+    if(/pg\s+adult/.test(l) && /senza\s+sapienza/.test(l))return 'adulto-senza';
+    if(/pg\s+adult/.test(l) && /con\s+sapienza/.test(l))return 'adulto-con';
     return '';
   }
 
   function forceMaxTargetsForCurrentContext(entry,pct){
-    if(!entry || pct===null || pct===undefined || pct<=0)return 1;
-    var lines=entryTextLines(entry), wanted=state.pg==='studente'?'studente':(forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza');
+    if(!entry || pct===null || pct===undefined || Number(pct)<=0)return 1;
+    var lines=entryTextLines(entry);
+    var wanted=state.pg==='studente'?'studente':(forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza');
     var best=1, audience='';
+
     for(var i=0;i<lines.length;i++){
-      var k=forceAudienceKind(lines[i]); if(k){audience=k;continue;}
+      var k=forceAudienceKind(lines[i]);
+      if(k){audience=k;continue;}
       if(audience!==wanted)continue;
-      var line=lines[i];
-      if(!/bersagli?/i.test(line) || !forcePctLineMatches(line,pct))continue;
-      var m=line.match(/(?:max(?:imo)?\\s*)?(\\d+)\\s*bersagli?/i);
-      if(!m)m=line.match(/max(?:imo)?\\s*(\\d+)/i);
+
+      var line=String(lines[i]||'');
+      if(!/bersagli(?:o|i)?/i.test(line) || !forcePctLineMatches(line,pct))continue;
+
+      /* Forme previste nel regolamento: “max 6 bersagli”, “massimo 6 bersagli”,
+         ma tollera anche refusi al singolare. */
+      var m=line.match(/(?:max(?:imo)?\s*)?(\d+)\s*bersagli(?:o|i)?/i);
+      if(!m)m=line.match(/max(?:imo)?\s*(\d+)/i);
       if(m)best=Math.max(best,Number(m[1])||1);
     }
+
     return Math.max(1,Math.min(12,best));
   }
 
@@ -3734,7 +3748,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if(!multi)return false;
     var ft=forceTargetStateEnsure(maxTargets), ardor=forceIsArdorConvergence(maxTargets);
     qs('forceMultiTargetTitle').textContent='Bersagli dell’azione · massimo '+maxTargets;
-    qs('forceMultiTargetNote').innerHTML='Scegli quanti bersagli distinti prendi di mira. Ogni bersaglio ha Resistenza, Salute ed esito propri; soltanto quelli colpiti producono danni e Sintomi esportabili.'+(ardor?' <strong>Ardor con Sapienza Offensiva 25:</strong> puoi distribuire fino a '+maxTargets+' proiettili tra i bersagli e indicare quanti vanno effettivamente a segno.':'');
+    qs('forceMultiTargetNote').innerHTML='<strong>Quanti bersagli prendi effettivamente di mira?</strong> Seleziona un numero qui sotto. Ogni bersaglio ha Resistenza, Salute ed esito propri; soltanto quelli colpiti producono danni e Sintomi esportabili.'+(ardor?' <strong>Ardor con Sapienza Offensiva 25:</strong> puoi distribuire fino a '+maxTargets+' proiettili tra i bersagli e indicare quanti vanno effettivamente a segno.':'');
     var buttons='';
     for(var i=1;i<=maxTargets;i++)buttons+='<button type="button" class="force-target-count-btn'+(i===ft.count?' active':'')+'" data-force-target-count="'+i+'">'+i+'</button>';
     qs('forceTargetCountButtons').innerHTML=buttons;
