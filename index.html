@@ -5843,15 +5843,33 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
   function physicalAfterHealthHtml(total,lost,dex,fat,res){
     total=Number(total);lost=Math.min(Math.max(0,Number(lost)||0),Math.max(0,total||0));
     if(!(total>0)||!(lost>0))return {html:'',copy:''};
-    var remaining=Math.max(0,total-lost),factor=(remaining/total)*(2/3)+(1/3),rows=[],copy=[];
-    [['Destrezza',dex],['Fatica',fat],['Resistenza',res]].forEach(function(pair){var base=Number(pair[1]);if(!Number.isFinite(base)||base<0)return;var fin=Math.floor(base*factor),delta=base-fin;rows.push('<div class="material-health-derived-line"><strong>'+esc(pair[0])+':</strong> '+esc(fmt(base))+' → <strong>'+esc(fmt(fin))+'</strong> (−'+esc(fmt(delta))+')</div>');copy.push(pair[0]+' '+fmt(base)+'→'+fmt(fin));});
+    var remaining=Math.max(0,total-lost),factor=(remaining/total)*(2/3)+(1/3),rows=[],copy=[],missing=[];
+    [['Destrezza',dex],['Fatica',fat],['Resistenza',res]].forEach(function(pair){if(pair[1]==null||String(pair[1]).trim()===''){missing.push(pair[0]);return}var base=Number(pair[1]);if(!Number.isFinite(base)||base<0){missing.push(pair[0]);return}var fin=Math.floor(base*factor),delta=base-fin;rows.push('<div class="material-health-derived-line"><strong>'+esc(pair[0])+':</strong> '+esc(fmt(base))+' → <strong>'+esc(fmt(fin))+'</strong> (−'+esc(fmt(delta))+')</div>');copy.push(pair[0]+' '+fmt(base)+'→'+fmt(fin));});
     var pct=lost/total*100;
     var html='<div class="material-health-derived"><div class="material-health-derived-title">Parametri Fisici dopo la perdita di Salute</div><div class="material-health-derived-line">Salute residua: <strong>'+esc(fmt(remaining))+' / '+esc(fmt(total))+'</strong> · persa '+esc(fmt(pct))+'%</div>';
-    if(rows.length)html+=rows.join('');else html+='<div class="material-health-derived-note">Inserisci Destrezza e Fatica di partenza; la Resistenza usata nel calcolo vale anche come Resistenza iniziale.</div>';
+    if(rows.length)html+=rows.join('');
+    if(missing.length)html+='<div class="material-health-derived-note">Per calcolare anche '+esc(missing.join(' e '))+' inserisci il valore di partenza.</div>';
     html+='<div class="material-health-derived-note">Formula: Parametro × (Salute residua / Salute totale × 2/3 + 1/3), arrotondato per difetto.</div></div>';
     return {html:html,copy:copy.length?('Parametri dopo Salute: '+copy.join(', ')):''};
   }
   function toggleHealthPhysical(prefix,show){var el=q(prefix+'HealthPhysicalWrap2');if(el)el.classList.toggle('hidden',!show);}
+  function toggleClosestField(id,show){var el=q(id);if(!el)return;var wrap=el.closest&&el.closest('.material-field');if(wrap)wrap.classList.toggle('hidden',!show);}
+  function configureEntityUseFields(type,profile,fixed,special){
+    var pfx=type==='plant'?'plant':'creature',mode=profile&&profile.mode||'',hasParams=!!(profile&&profile.params&&profile.params.length),hasFixed=!!(profile&&profile.fixed&&profile.fixed.length);
+    var descriptive=!hasParams&&!hasFixed, numeric=!(fixed||special||descriptive||mode==='fixed'||mode==='restore'||mode==='suspend');
+    var healthContext=!special&&!descriptive&&profileHasHealthDamage(profile);
+    toggleClosestField(pfx+'TargetResistance2',numeric||healthContext);
+    toggleClosestField(pfx+'TargetHealth2',healthContext);
+    if(type==='creature'){toggleClosestField('creatureFatigueMax2',numeric);toggleClosestField('creatureFatigueCurrent2',numeric);}
+    toggleHealthPhysical(pfx,healthContext);
+    return {numeric:numeric,healthContext:healthContext,descriptive:descriptive};
+  }
+  function configurePotionSubjectFields(pe){
+    var mode=pe&&pe.mode||'',hasParams=!!(pe&&pe.params&&pe.params.length),descriptive=!hasParams||mode==='fixed'||mode==='restore'||mode==='suspend';
+    var numeric=!descriptive,healthDamage=numeric&&profileHasHealthDamage(pe);
+    ['potionTarget','potionUser'].forEach(function(pfx){toggleClosestField(pfx+'Resistance2',numeric);toggleClosestField(pfx+'Health2',healthDamage);});
+    return {numeric:numeric,healthDamage:healthDamage,descriptive:descriptive};
+  }
   function medicalBuild(type,causeName,healthLost,healthTotal,targetLabel){
     if(!MEDICAL||typeof MEDICAL.buildResult!=='function')return {html:'',copy:''};
     return MEDICAL.buildResult(type,causeName,healthLost,healthTotal,targetLabel)||{html:'',copy:''};
@@ -5861,6 +5879,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function norm(v){try{return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(e){return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}}
   function number(v){var n=Number(String(v==null?'':v).replace(',','.'));return Number.isFinite(n)?n:null}
+  function optionalNumber(v){var raw=String(v==null?'':v).trim();return raw?number(raw):null}
   function fmt(n){if(!Number.isFinite(Number(n)))return String(n==null?'':n);var x=Math.round(Number(n)*100)/100;return String(x).replace('.',',')}
   function singleNumber(v){var s=String(v==null?'':v).trim();if(!/^-?\d+(?:[.,]\d+)?$/.test(s))return null;return number(s)}
   function roman(n){return ({1:'I',2:'II',3:'III',4:'IV',5:'V'})[Number(n)]||''}
@@ -6140,17 +6159,19 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
     var pfx=type==='plant'?'plant':'creature',forceE=q(pfx+'UseForce2'),exprBox=q(pfx+'ForceExpression2'),forceWrap=q(pfx+'UseForceWrap2'),profile=effectProfile(type,item,attack);
     var params=profile.params,effects=profile.effects;
     q(pfx+'AffectedParamsAuto2').innerHTML=paramsHtml(params,effects);
-    var fixed=attack&&attack.id==='specific',special=profile.mode==='special';
-    if(exprBox)exprBox.textContent=attack&&attack.expr&&!fixed&&!special?'Forza prevista: '+attack.expr:'';
-    if(forceWrap)forceWrap.classList.toggle('hidden',fixed||special||profile.mode==='fixed'||profile.mode==='restore'||profile.mode==='suspend');
-    if(attack&&!fixed&&!special&&forceE&&forceE.dataset.manual!=='1'){var nv=numericExpression(attack.expr);forceE.value=nv==null?'':String(nv)}
+    var fixed=attack&&attack.id==='specific',special=profile.mode==='special',ui=configureEntityUseFields(type,profile,fixed,special);
+    if(exprBox)exprBox.textContent=attack&&attack.expr&&ui.numeric?'Forza prevista: '+attack.expr:'';
+    if(forceWrap)forceWrap.classList.toggle('hidden',!ui.numeric);
+    if(attack&&ui.numeric&&forceE&&forceE.dataset.manual!=='1'){var nv=numericExpression(attack.expr);forceE.value=nv==null?'':String(nv)}
     var force=number(forceE&&forceE.value),res=number(q(pfx+'TargetResistance2').value),totalHealth=number(q(pfx+'TargetHealth2').value),wrap=q(pfx+'UseResultWrap'),dest=q(pfx+'UseResult');
-    var attackLabel=attack?attack.label:'';setDamageSelect(type,item,attackLabel);q(pfx+'MedicalCause2').value=damageChoicePending(type)?'':causeFor(type,item,attackLabel);
-    toggleHealthPhysical(pfx,profileHasHealthDamage(profile));
+    var attackLabel=attack?attack.label:'',damageWrap=q(pfx+'DamageTypeWrap2'),damageSel=q(pfx+'DamageType2');
+    if(ui.healthContext){setDamageSelect(type,item,attackLabel);q(pfx+'MedicalCause2').value=damageChoicePending(type)?'':causeFor(type,item,attackLabel);}
+    else{st.damage='';if(damageWrap)damageWrap.classList.add('hidden');if(damageSel)damageSel.innerHTML='';q(pfx+'MedicalCause2').value='';}
 
-    if(special){
-      dest.innerHTML='<div class="material-specific-effect"><strong>Effetto regolamentare:</strong> '+esc(profile.note||shortSpecific(item)||'come da Specifiche')+'</div>';
-      wrap.classList.remove('hidden');st.lastResult=(type==='plant'?'Pianta: ':'Creatura: ')+item.name+' · '+(profile.note||'Effetto specifico');materialHeightSoon();return;
+    if(special||ui.descriptive){
+      var descriptiveNote=profile.note||shortSpecific(item)||item.effectNoteAuto||'Questo utilizzo non modifica numericamente i Parametri.';
+      dest.innerHTML='<div class="material-specific-effect"><strong>Effetto regolamentare:</strong> '+esc(descriptiveNote)+'</div>';
+      wrap.classList.remove('hidden');st.lastResult=(type==='plant'?'Pianta: ':'Creatura: ')+item.name+' · '+descriptiveNote;materialHeightSoon();return;
     }
 
     if(fixed || profile.mode==='fixed'){
@@ -6161,7 +6182,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
       var medObj={html:'',copy:''},healthInput=q(pfx+'TargetHealth2'),causeName=q(pfx+'MedicalCause2').value,phys={html:'',copy:''};
       if(healthInput)healthInput.classList.remove('medical-needed');
       if(fixedLost!=null&&MEDICAL&&typeof MEDICAL.buildResult==='function'){
-        if(totalHealth!=null&&totalHealth>0){medObj=damageChoicePending(type)?{html:materialDamageChoicePrompt(fixedLost,totalHealth),copy:''}:medicalBuild(type==='plant'?'pianta':'creatura',causeName,fixedLost,totalHealth,'Bersaglio');phys=physicalAfterHealthHtml(totalHealth,fixedLost,number(q(pfx+'TargetDexterity2')&&q(pfx+'TargetDexterity2').value),number(q(pfx+'TargetFatigue2')&&q(pfx+'TargetFatigue2').value),res);}
+        if(totalHealth!=null&&totalHealth>0){medObj=damageChoicePending(type)?{html:materialDamageChoicePrompt(fixedLost,totalHealth),copy:''}:medicalBuild(type==='plant'?'pianta':'creatura',causeName,fixedLost,totalHealth,'Bersaglio');phys=physicalAfterHealthHtml(totalHealth,fixedLost,optionalNumber(q(pfx+'TargetDexterity2')&&q(pfx+'TargetDexterity2').value),optionalNumber(q(pfx+'TargetFatigue2')&&q(pfx+'TargetFatigue2').value),res);}
         else{if(healthInput)healthInput.classList.add('medical-needed');medObj.html=materialMedicalPrompt(type==='plant'?'Pianta':'Creatura',causeName,fixedLost,'Bersaglio');}
       }
       if(!fx&&!note&&!medObj.html){wrap.classList.add('hidden');dest.innerHTML='';st.lastResult='';return}
@@ -6178,7 +6199,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
     var healthLost=materialHealthDamage(params,effects,health),medObj={html:'',copy:''},healthInput=q(pfx+'TargetHealth2'),causeName=q(pfx+'MedicalCause2').value,phys={html:'',copy:''};
     if(healthInput)healthInput.classList.remove('medical-needed');
     if(healthLost!=null&&MEDICAL&&typeof MEDICAL.buildResult==='function'){
-      if(totalHealth!=null&&totalHealth>0){medObj=damageChoicePending(type)?{html:materialDamageChoicePrompt(healthLost,totalHealth),copy:''}:medicalBuild(type==='plant'?'pianta':'creatura',causeName,healthLost,totalHealth,'Bersaglio');phys=physicalAfterHealthHtml(totalHealth,healthLost,number(q(pfx+'TargetDexterity2')&&q(pfx+'TargetDexterity2').value),number(q(pfx+'TargetFatigue2')&&q(pfx+'TargetFatigue2').value),res);}
+      if(totalHealth!=null&&totalHealth>0){medObj=damageChoicePending(type)?{html:materialDamageChoicePrompt(healthLost,totalHealth),copy:''}:medicalBuild(type==='plant'?'pianta':'creatura',causeName,healthLost,totalHealth,'Bersaglio');phys=physicalAfterHealthHtml(totalHealth,healthLost,optionalNumber(q(pfx+'TargetDexterity2')&&q(pfx+'TargetDexterity2').value),optionalNumber(q(pfx+'TargetFatigue2')&&q(pfx+'TargetFatigue2').value),res);}
       else{if(healthInput)healthInput.classList.add('medical-needed');medObj.html=materialMedicalPrompt(type==='plant'?'Pianta':'Creatura',causeName,healthLost,'Bersaglio');}
     }
     dest.innerHTML='<div class="material-result-meta">'+esc(meta)+'</div>'+lines+(profile.note?'<div class="material-specific-effect">'+esc(profile.note)+'</div>':'')+(medObj.html||'')+(phys.html||'');wrap.classList.remove('hidden');
@@ -6257,9 +6278,9 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
   function renderPotion(){var st=state.potion,item=st.item,p=st.parsed;if(!item||!p)return;q('potionSelectedCard2').classList.remove('hidden');q('potionConfigCard2').classList.remove('hidden');q('potionUseCard2').classList.remove('hidden');q('potionSelectedName2').textContent=item.name;var ck=findKey(item.values,'Classificazione'),tk=findKey(item.values,'Tipologia'),sk=findKey(item.values,'Somministrazione');q('potionSelectedSub2').textContent=[ck?'Classificazione '+item.values[ck]:'',tk?item.values[tk]:'',sk?item.values[sk]:''].filter(Boolean).join(' · ');renderRawValues('potion',item);var vals='<div class="material-values"><div class="material-value is-changed"><span class="material-value-label">Forza finale dal Bagaglio</span><span class="material-value-main">'+esc(fmt(p.force))+'</span></div><div class="material-value"><span class="material-value-label">Fascia</span><span class="material-value-main">'+esc(p.tier)+'</span></div><div class="material-value"><span class="material-value-label">Dosi registrate</span><span class="material-value-main">'+esc(p.doses)+'</span></div></div><div class="material-result-meta"><strong>Calcolo registrato:</strong> '+esc(p.formula)+'</div>';q('potionEffectiveResult2').innerHTML=vals;var spec=String(item.specs||'');q('potionSpecs2').innerHTML=spec.split(/\n/).map(function(x){return '<span class="material-spec-line">'+esc(x||' ')+'</span>'}).join('');var pe=potionEffects(item);q('potionAffectedParamsAuto2').innerHTML=paramsHtml(pe.params,pe.effects)||(item.affectedParams?esc(item.affectedParams):'—');q('potionMedicalCause2').value=item.name;renderPotionUse()}
   function potionSubject(label,res,healthTotal,healthInput,dex,fat,item,p,dose,pe){
     if(healthInput)healthInput.classList.remove('medical-needed');
-    var isFixed=pe.mode==='fixed',isRestore=pe.mode==='restore',isSuspend=pe.mode==='suspend';
-    if(isRestore||isSuspend){
-      return {html:'<div class="material-result-subject"><div class="material-result-subject-title">'+esc(label)+'</div><div class="material-specific-effect"><strong>Effetto regolamentare:</strong> '+esc(pe.note||item.effectNoteAuto||'come da Specifiche')+'</div></div>',copy:(pe.note||item.effectNoteAuto||'Effetto regolamentare')};
+    var isFixed=pe.mode==='fixed',isRestore=pe.mode==='restore',isSuspend=pe.mode==='suspend',isDescriptive=!(pe.params&&pe.params.length);
+    if(isRestore||isSuspend||isDescriptive){
+      return {html:'<div class="material-result-subject"><div class="material-result-subject-title">'+esc(label)+'</div><div class="material-specific-effect"><strong>Effetto regolamentare:</strong> '+esc(pe.note||item.effectNoteAuto||item.affectedParams||'come da Specifiche')+'</div></div>',copy:(pe.note||item.effectNoteAuto||item.affectedParams||'Effetto regolamentare')};
     }
     if(isFixed){
       var fl=pe.fixed||[],html=fl.map(function(e){var cl=e.sign==='+'?'material-effect-plus':'material-effect-minus';return '<div class="material-effect-line"><span class="'+cl+'">'+e.sign+fmt(e.value)+'</span> '+esc(e.param)+'</div>'}).join('');
@@ -6277,21 +6298,21 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
   }
   function renderPotionUse(){
     var st=state.potion,item=st.item,p=st.parsed;if(!item||!p)return;
-    var dose=number(q('potionDoseFactor2').value);if(dose==null||dose<0)dose=0;var pe=potionEffects(item),html='',copies=[],healthDamage=profileHasHealthDamage(pe);
+    var dose=number(q('potionDoseFactor2').value);if(dose==null||dose<0)dose=0;var pe=potionEffects(item),html='',copies=[],pui=configurePotionSubjectFields(pe),healthDamage=pui.healthDamage;
     var targetHealthInput=q('potionTargetHealth2'),userHealthInput=q('potionUserHealth2');if(targetHealthInput)targetHealthInput.classList.remove('medical-needed');if(userHealthInput)userHealthInput.classList.remove('medical-needed');
     var tw=q('potionTargetHealthPhysicalWrap2'),uw=q('potionUserHealthPhysicalWrap2');if(tw)tw.classList.toggle('hidden',!healthDamage||!q('potionTargetEnabled2').checked);if(uw)uw.classList.toggle('hidden',!healthDamage||!q('potionUserEnabled2').checked);
-    if(q('potionTargetEnabled2').checked){var a=potionSubject('Bersaglio',number(q('potionTargetResistance2').value),number(targetHealthInput.value),targetHealthInput,number(q('potionTargetDexterity2').value),number(q('potionTargetFatigue2').value),item,p,dose,pe);html+=a.html;if(a.copy)copies.push('Bersaglio: '+a.copy)}
-    if(q('potionUserEnabled2').checked){var b=potionSubject('Evocatore / utilizzatore',number(q('potionUserResistance2').value),number(userHealthInput.value),userHealthInput,number(q('potionUserDexterity2').value),number(q('potionUserFatigue2').value),item,p,dose,pe);html+=b.html;if(b.copy)copies.push('Evocatore / utilizzatore: '+b.copy)}
+    if(q('potionTargetEnabled2').checked){var a=potionSubject('Bersaglio',number(q('potionTargetResistance2').value),number(targetHealthInput.value),targetHealthInput,optionalNumber(q('potionTargetDexterity2').value),optionalNumber(q('potionTargetFatigue2').value),item,p,dose,pe);html+=a.html;if(a.copy)copies.push('Bersaglio: '+a.copy)}
+    if(q('potionUserEnabled2').checked){var b=potionSubject('Evocatore / utilizzatore',number(q('potionUserResistance2').value),number(userHealthInput.value),userHealthInput,optionalNumber(q('potionUserDexterity2').value),optionalNumber(q('potionUserFatigue2').value),item,p,dose,pe);html+=b.html;if(b.copy)copies.push('Evocatore / utilizzatore: '+b.copy)}
     var wrap=q('potionUseResultWrap2'),dest=q('potionUseResult2');if(!html){wrap.classList.add('hidden');dest.innerHTML='';st.lastResult='';return}dest.innerHTML=html;wrap.classList.remove('hidden');st.lastResult='Pozione: '+item.name+' · Forza '+fmt(p.force)+' · '+copies.join(' · ');materialHeightSoon();
   }
-  function loadPotionFromPaste(){var status=q('potionParseStatus2');try{var p=parseInventory(q('potionInventoryPaste2').value),item=resolvePotionItem(p.name);if(!item)throw new Error('La frase è valida, ma «'+p.name+'» non corrisponde a una Pozione del Pozionario. Puoi selezionarla manualmente qui sotto.');state.potion={item:item,parsed:p,lastResult:''};status.className='material-copy-status potion-parse-ok';status.textContent='Caricata: '+item.name+(norm(p.name)!==norm(item.name)?' · riconosciuta da «'+p.name+'»':'')+'.';renderPotion()}catch(e){status.className='material-copy-status potion-parse-error';status.textContent=e.message||'Impossibile leggere la frase.';q('potionSelectedCard2').classList.add('hidden');q('potionConfigCard2').classList.add('hidden');q('potionUseCard2').classList.add('hidden');materialHeightSoon()}}
+  function loadPotionFromPaste(){var status=q('potionParseStatus2');try{var p=parseInventory(q('potionInventoryPaste2').value),item=resolvePotionItem(p.name);if(!item)throw new Error('La frase è valida, ma «'+p.name+'» non corrisponde a una Pozione del Pozionario. Puoi selezionarla manualmente qui sotto.');state.potion={item:item,parsed:p,lastResult:''};status.className='material-copy-status potion-parse-ok';status.textContent='Caricata: '+item.name+(norm(p.name)!==norm(item.name)?' · riconosciuta da «'+p.name+'»':'')+'.';renderPotion()}catch(e){state.potion={item:null,parsed:null,lastResult:''};status.className='material-copy-status potion-parse-error';status.textContent=e.message||'Impossibile leggere la frase.';q('potionSelectedCard2').classList.add('hidden');q('potionConfigCard2').classList.add('hidden');q('potionUseCard2').classList.add('hidden');materialHeightSoon()}}
   function fillPotionManualPicker(){
     var sel=q('potionManualName2');if(!sel)return;var cur=sel.value,items=(DB.potion||[]).slice().sort(function(a,b){return a.name.localeCompare(b.name,'it')});sel.innerHTML='<option value="">— Seleziona —</option>'+items.map(function(x){return '<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>'}).join('');if(cur)sel.value=cur;
   }
   function loadPotionManual(){
-    var status=q('potionManualStatus2'),name=q('potionManualName2').value,force=number(q('potionManualForce2').value),doses=number(q('potionManualDoses2').value),tier=q('potionManualTier2').value;
+    var status=q('potionManualStatus2'),name=q('potionManualName2').value,forceRaw=String(q('potionManualForce2').value||'').trim(),force=optionalNumber(forceRaw),doses=number(q('potionManualDoses2').value),tier=q('potionManualTier2').value;
     if(!name){status.className='material-copy-status potion-parse-error';status.textContent='Seleziona una Pozione.';return}
-    if(force==null||force<0){status.className='material-copy-status potion-parse-error';status.textContent='Inserisci la Forza finale.';return}
+    if(!forceRaw||force==null||force<0){status.className='material-copy-status potion-parse-error';status.textContent='Inserisci la Forza finale.';return}
     if(doses==null||doses<0)doses=0;
     var item=itemByName('potion',name);if(!item){status.className='material-copy-status potion-parse-error';status.textContent='Pozione non trovata nel Pozionario.';return}
     var p={raw:'Inserimento manuale',normalized:'',name:item.name,doses:doses,tier:tier,formula:'Inserimento manuale',force:force};state.potion={item:item,parsed:p,lastResult:''};status.className='material-copy-status potion-parse-ok';status.textContent='Caricata manualmente: '+item.name+'.';q('potionParseStatus2').textContent='';renderPotion();materialHeightSoon();
