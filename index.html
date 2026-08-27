@@ -4,6 +4,7 @@
 
 
 <!DOCTYPE html>
+<!-- v42: isolamento bersagli rinforzato: nessun autofill/clonazione dei campi tra bersagli -->
 <!-- v41: bersagli multipli isolati + riepilogo post-utilizzo distinto per ciascun bersaglio -->
 <!-- v40: scheda Conoscenza nella Forza coordinata alla Riuscita + riepilogo con bonus/malus post-utilizzo -->
 <!-- v39: moduli Riuscita e Forza chiusi all’apertura, selettore superiore coordinato agli altri tool -->
@@ -4226,6 +4227,20 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       state.forceTargets.items.push(forceBlankTargetItem());
     }
     if(state.forceTargets.items.length>state.forceTargets.count){state.forceTargets.items.length=state.forceTargets.count;}
+
+    /* v42 — normalizza ogni record separatamente. In questo modo non può mai esistere
+       un riferimento condiviso tra Bersaglio 1, 2, 3… anche dopo più cambi di numero. */
+    state.forceTargets.items=state.forceTargets.items.map(function(item){
+      item=item||{};
+      return {
+        name:String(item.name||''),
+        hit:item.hit==='miss'?'miss':'hit',
+        resistance:item.resistance===undefined||item.resistance===null?'':String(item.resistance),
+        health:item.health===undefined||item.health===null?'':String(item.health),
+        projectiles:Math.max(1,Math.floor(Number(item.projectiles)||1)),
+        hits:Math.max(0,Math.floor(Number(item.hits)||0))
+      };
+    });
     return state.forceTargets;
   }
 
@@ -4265,17 +4280,45 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         list+='<div class="force-target-card'+(missed?' is-missed':'')+'" data-force-target-index="'+j+'">'+
           '<div class="force-target-card-head"><div class="force-target-card-title">'+escapeHtml(label)+'</div><div class="force-target-card-status">'+(ardor?'gestione proiettili':'esito individuale')+'</div></div>'+
           '<div class="force-target-fields">'+
-            '<div class="force-field full"><label>Nome del bersaglio <span class="force-status-tag">facoltativo</span></label><input type="text" data-ft-field="name" name="forceTargetName_'+j+'" autocomplete="off" value="'+escapeHtml(it.name||'')+'" placeholder="Es. Harry Potter"></div>'+
+            '<div class="force-field full"><label>Nome del bersaglio <span class="force-status-tag">facoltativo</span></label><input type="text" data-ft-field="name" autocomplete="off" data-form-type="other" data-lpignore="true" value="'+escapeHtml(it.name||'')+'" placeholder="Es. Harry Potter"></div>'+
             (ardor
-              ? '<div class="force-field"><label>Proiettili indirizzati</label><input type="number" data-ft-field="projectiles" name="forceTargetProjectiles_'+j+'" autocomplete="off" min="1" max="'+maxTargets+'" step="1" value="'+Math.max(1,Number(it.projectiles)||1)+'"></div><div class="force-field"><label>Proiettili andati a segno</label><input type="number" data-ft-field="hits" name="forceTargetHits_'+j+'" autocomplete="off" min="0" max="'+Math.max(1,Number(it.projectiles)||1)+'" step="1" value="'+Math.max(0,Number(it.hits)||0)+'"></div>'
-              : '<div class="force-field full"><label>Esito sul bersaglio</label><select data-ft-field="hit" name="forceTargetHit_'+j+'" autocomplete="off"><option value="hit"'+(it.hit!=='miss'?' selected':'')+'>Colpito</option><option value="miss"'+(it.hit==='miss'?' selected':'')+'>Non colpito / si difende</option></select></div>')+
-            '<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" name="forceTargetResistance_'+j+'" autocomplete="off" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
-            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" name="forceTargetHealth_'+j+'" autocomplete="off" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'+
+              ? '<div class="force-field"><label>Proiettili indirizzati</label><input type="number" data-ft-field="projectiles" autocomplete="off" data-form-type="other" data-lpignore="true" min="1" max="'+maxTargets+'" step="1" value="'+Math.max(1,Number(it.projectiles)||1)+'"></div><div class="force-field"><label>Proiettili andati a segno</label><input type="number" data-ft-field="hits" autocomplete="off" data-form-type="other" data-lpignore="true" min="0" max="'+Math.max(1,Number(it.projectiles)||1)+'" step="1" value="'+Math.max(0,Number(it.hits)||0)+'"></div>'
+              : '<div class="force-field full"><label>Esito sul bersaglio</label><select data-ft-field="hit" autocomplete="off" data-form-type="other"><option value="hit"'+(it.hit!=='miss'?' selected':'')+'>Colpito</option><option value="miss"'+(it.hit==='miss'?' selected':'')+'>Non colpito / si difende</option></select></div>')+
+            '<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" autocomplete="off" data-form-type="other" data-lpignore="true" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
+            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" autocomplete="off" data-form-type="other" data-lpignore="true" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'+
           '</div><div class="force-target-result" data-ft-result="'+j+'"></div></div>';
       }
       targetList.innerHTML=list;
       targetList.dataset.structureKey=structureKey;
     }
+
+    /* v42 — il DOM viene sempre riscritto dai record del singolo bersaglio.
+       È intenzionale assegnare anche stringhe vuote: impedisce al browser di
+       riproporre nei nuovi campi i valori digitati nel Bersaglio 1. */
+    function applyTargetStateToDom(){
+      if(!targetList || !state.forceTargets)return;
+      for(var ai=0;ai<state.forceTargets.count;ai++){
+        var aitem=state.forceTargets.items[ai]||forceBlankTargetItem();
+        var acard=targetList.querySelector('[data-force-target-index="'+ai+'"]');
+        if(!acard)continue;
+        var afields=acard.querySelectorAll('[data-ft-field]');
+        for(var af=0;af<afields.length;af++){
+          var el=afields[af], key=el.getAttribute('data-ft-field'), val='';
+          if(key==='name')val=String(aitem.name||'');
+          else if(key==='hit')val=aitem.hit==='miss'?'miss':'hit';
+          else if(key==='resistance')val=String(aitem.resistance||'');
+          else if(key==='health')val=String(aitem.health||'');
+          else if(key==='projectiles')val=String(Math.max(1,Number(aitem.projectiles)||1));
+          else if(key==='hits')val=String(Math.max(0,Number(aitem.hits)||0));
+          if(el.value!==val)el.value=val;
+        }
+      }
+    }
+    applyTargetStateToDom();
+    /* Alcuni browser applicano il ripristino automatico dei campi subito dopo il render. */
+    setTimeout(applyTargetStateToDom,0);
+    setTimeout(applyTargetStateToDom,80);
+
     var budget=qs('forceArdorBudget');
     if(budget){
       if(ardor){budget.classList.remove('hidden');}else{budget.className='force-ardor-budget hidden';budget.innerHTML='';}
@@ -4311,9 +4354,12 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       var newCount=Math.max(1,Number(b.getAttribute('data-force-target-count'))||1);
       if(!state.forceTargets)state.forceTargets={signature:'',count:1,items:[]};
       state.forceTargets.count=newCount;
-      /* Se si aggiungono bersagli, i nuovi slot devono nascere davvero vuoti. */
+      /* v42 — ogni nuovo slot viene ricreato da zero, senza copiare né il record
+         né i valori DOM del bersaglio precedente. */
       if(newCount>oldCount){
         for(var ni=oldCount;ni<newCount;ni++){state.forceTargets.items[ni]=forceBlankTargetItem();}
+      }else if(newCount<oldCount){
+        state.forceTargets.items=state.forceTargets.items.slice(0,newCount);
       }
       refreshForceCard(); refreshModifierSummary();
     });
