@@ -2079,7 +2079,7 @@
       <div class="card hidden" id="plantUseCard">
         <p class="step-label"><span class="num">2</span>Utilizzo della Pianta</p>
         <div class="material-use-grid">
-          <div class="material-field full"><label for="plantAttackType2">Pianta e tipo di attacco / utilizzo</label><select id="plantAttackType2"></select><p class="material-field-note" id="plantForceExpression2"></p></div>
+          <div class="material-field full"><label for="plantAttackType2">Tipo di attacco / utilizzo della Pianta</label><select id="plantAttackType2"></select><p class="material-field-note" id="plantForceExpression2"></p></div>
           <div class="material-field full hidden" id="plantDamageTypeWrap2"><label for="plantDamageType2">Tipo di danno <span class="material-status-pill">Sintomi</span></label><select id="plantDamageType2"></select><p class="material-field-note">Se la Pianta può causare conseguenze diverse, scegli quella avvenuta: questa scelta determina la tabella dei Sintomi e l’importazione nel San Mungo.</p></div>
           <div class="material-field" id="plantUseForceWrap2"><label for="plantUseForce2">Forza applicata</label><input type="number" id="plantUseForce2" min="0" step="0.1" inputmode="decimal"></div>
           <div class="material-field"><label for="plantTargetResistance2">Resistenza del bersaglio</label><input type="number" id="plantTargetResistance2" min="0.1" step="0.5" inputmode="decimal"></div>
@@ -2120,7 +2120,7 @@
       <div class="card hidden" id="creatureUseCard">
         <p class="step-label"><span class="num">2</span>Attacco / utilizzo</p>
         <div class="material-use-grid">
-          <div class="material-field full"><label for="creatureAttackType2">Creatura e tipo di attacco / utilizzo</label><select id="creatureAttackType2"></select><p class="material-field-note" id="creatureForceExpression2"></p></div>
+          <div class="material-field full"><label for="creatureAttackType2">Tipo di attacco / utilizzo della Creatura</label><select id="creatureAttackType2"></select><p class="material-field-note" id="creatureForceExpression2"></p></div>
           <div class="material-field full hidden" id="creatureDamageTypeWrap2"><label for="creatureDamageType2">Tipo di danno <span class="material-status-pill">Sintomi</span></label><select id="creatureDamageType2"></select><p class="material-field-note">Se la Creatura può ferire in più modi, scegli il danno realmente subito: il tool userà la relativa tabella medimagica.</p></div>
           <div class="material-field" id="creatureUseForceWrap2"><label for="creatureUseForce2">Forza dell’attacco</label><input type="number" id="creatureUseForce2" min="0" step="0.1" inputmode="decimal"></div>
           <div class="material-field"><label for="creatureFatigueMax2">Fatica totale della Creatura</label><input type="number" id="creatureFatigueMax2" min="0.1" step="0.5" inputmode="decimal"></div>
@@ -5773,8 +5773,60 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
   function paramsHtml(params,effects){if(!params||!params.length)return '<span class="material-muted">Nessun Parametro numerico indicato per questo utilizzo.</span>';return params.map(function(p){var e=effects&&effects[p],sg=e&&e.sign==='+'?' +':e&&e.sign==='-'?' −':'';return '<span class="material-auto-chip">'+esc(p+sg)+'</span>'}).join('')}
   function shortSpecific(item){if(item.effectNoteAuto)return item.effectNoteAuto;var l=String(item.specs||'').split(/\n+/).filter(Boolean);return l.slice(0,3).join(' ')}
 
-  function attackOptions(type,item,comp){var vals={};Object.keys(comp.values).forEach(function(k){vals[k]=comp.values[k].effective});var list=[];Object.keys(vals).forEach(function(k){if(norm(k).indexOf('forza')===-1)return;var lm=labelMap(vals[k]),labs=Object.keys(lm);if(labs.length){labs.forEach(function(l){list.push({id:k+'::'+l,label:(norm(k)==='forza attacco'?'':k.replace(/forza/ig,'').trim()+' — ')+l,expr:lm[l]})})}else{var label=k.replace(/forza/ig,'').trim();if(!label||norm(label)==='attacco')label='Attacco / utilizzo principale';list.push({id:k,label:label,expr:vals[k]})}});if((item.fixedEffectsAuto||[]).length||(!list.length&&shortSpecific(item))){list.unshift({id:'specific',label:'Effetto specifico dello specchietto',expr:''})}return list}
-  function setAttackSelect(type,item,comp,reset){var id=type==='plant'?'plantAttackType2':'creatureAttackType2',sel=q(id),opts=attackOptions(type,item,comp);if(!sel)return null;var old=state[type].attack;if(reset||!opts.some(function(x){return x.id===old}))old=opts.length?opts[0].id:'';state[type].attack=old;sel.innerHTML=opts.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===old?' selected':'')+'>'+esc(x.label)+'</option>'}).join('')||'<option value="">Nessun attacco con Forza tabellata</option>';return opts.find(function(x){return x.id===old})||opts[0]||null}
+  function attackOptions(type,item,comp){
+    var vals={},list=[],ability='';
+    Object.keys(comp.values||{}).forEach(function(k){
+      vals[k]=comp.values[k].effective;
+      if(!ability&&norm(k).indexOf('abilita')!==-1)ability=String(comp.values[k].effective||'').trim();
+    });
+    function add(id,label,expr){
+      label=String(label||'').trim();
+      if(!label)label='Attacco / utilizzo principale';
+      var full=(item&&item.name?item.name+' — ':'')+label;
+      if(!list.some(function(x){return x.id===id}))list.push({id:id,label:full,expr:expr==null?'':String(expr)});
+    }
+    Object.keys(vals).forEach(function(k){
+      if(norm(k).indexOf('forza')===-1)return;
+      var lm=labelMap(vals[k]),labs=Object.keys(lm);
+      if(labs.length){
+        labs.forEach(function(l){
+          var prefix=norm(k)==='forza attacco'?'':k.replace(/forza/ig,'').trim()+' — ';
+          add(k+'::'+l,prefix+l,lm[l]);
+        });
+      }else{
+        var label=k.replace(/forza/ig,'').trim();
+        if(!label||norm(label)==='attacco')label=ability||'Attacco / utilizzo principale';
+        add(k,label,vals[k]);
+      }
+    });
+    if((item.fixedEffectsAuto||[]).length||(!list.length&&shortSpecific(item))){
+      add('specific',ability||'Effetto specifico dello specchietto','');
+    }
+    /* Una Pianta/Creatura selezionata deve essere sempre utilizzabile nel form:
+       se lo specchietto non contiene una Forza numerica, lasciamo comunque
+       un'opzione esplicita e la Forza resta compilabile manualmente. */
+    if(!list.length)add('generic',ability||'Utilizzo indicato nello specchietto','');
+    return list;
+  }
+  function setAttackSelect(type,item,comp,reset){
+    var id=type==='plant'?'plantAttackType2':'creatureAttackType2',sel=q(id),opts=attackOptions(type,item,comp);
+    if(!sel)return null;
+    var old=state[type].attack;
+    if(reset||!opts.some(function(x){return x.id===old}))old=opts.length?opts[0].id:'';
+    state[type].attack=old;
+    /* v54: costruzione DOM nativa. Evita select visivamente vuote e consente
+       di cambiare sempre attacco/utilizzo dopo aver scelto la Pianta/Creatura. */
+    while(sel.options.length)sel.remove(0);
+    opts.forEach(function(x){
+      var op=new Option(x.label,x.id,x.id===old,x.id===old);
+      sel.add(op);
+    });
+    if(!opts.length)sel.add(new Option('Nessun utilizzo disponibile',''));
+    sel.disabled=false;
+    if(old)sel.value=old;
+    if(sel.selectedIndex<0&&sel.options.length){sel.selectedIndex=0;state[type].attack=sel.value;old=sel.value;}
+    return opts.find(function(x){return x.id===state[type].attack})||opts[0]||null;
+  }
   function updateVariantUI(type,item){var wrap=q('creatureVariantWrap2'),sel=q('creatureVariant2');if(type!=='creature'||!wrap||!sel)return;var opts=variantOptions(item);wrap.classList.toggle('hidden',!opts.length);if(opts.length){var current=state.creature.variant;if(!opts.some(function(x){return x.id===current}))current=opts[0].id;state.creature.variant=current;sel.innerHTML=opts.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===current?' selected':'')+'>'+esc(x.label)+'</option>'}).join('')}}
   function materialSemantic(item){
     var vals=item&&item.values||{},ability='';
