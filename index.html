@@ -4,6 +4,7 @@
 
 
 <!DOCTYPE html>
+<!-- v41: bersagli multipli isolati + riepilogo post-utilizzo distinto per ciascun bersaglio -->
 <!-- v40: scheda Conoscenza nella Forza coordinata alla Riuscita + riepilogo con bonus/malus post-utilizzo -->
 <!-- v39: moduli Riuscita e Forza chiusi all’apertura, selettore superiore coordinato agli altri tool -->
 <!-- v38: Riuscita e Forza separate in due moduli collegati ma utilizzabili indipendentemente -->
@@ -1551,6 +1552,7 @@
     box-shadow:none;
   }
 
+  /* v41 — gli effetti sul bersaglio possono comparire separatamente per ciascun bersaglio. */
   /* v40 — nel riepilogo distingui gli effetti che restano all'evocatore o al bersaglio. */
   .modifier-item.mod-after-caster{border-left-color:#77547f;background:rgba(119,84,127,.055);}
   .modifier-item.mod-after-target{border-left-color:#8b3548;background:rgba(139,53,72,.05);}
@@ -4207,6 +4209,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return Math.max(1,Math.min(12,best));
   }
 
+  /* v41 — ogni bersaglio possiede un record autonomo: nessun valore viene ereditato dal precedente. */
+  function forceBlankTargetItem(){
+    return {name:'',hit:'hit',resistance:'',health:'',projectiles:1,hits:1};
+  }
+
   function forceTargetStateEnsure(maxTargets){
     if(!state.forceTargets)state.forceTargets={signature:'',count:1,items:[]};
     var entryName=cleanKnowledgeName(state.selectedEntry&&state.selectedEntry.name||'');
@@ -4216,7 +4223,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     }
     state.forceTargets.count=Math.max(1,Math.min(maxTargets,Number(state.forceTargets.count)||1));
     while(state.forceTargets.items.length<state.forceTargets.count){
-      state.forceTargets.items.push({name:'',hit:'hit',resistance:'',health:'',projectiles:1,hits:1});
+      state.forceTargets.items.push(forceBlankTargetItem());
     }
     if(state.forceTargets.items.length>state.forceTargets.count){state.forceTargets.items.length=state.forceTargets.count;}
     return state.forceTargets;
@@ -4258,12 +4265,12 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         list+='<div class="force-target-card'+(missed?' is-missed':'')+'" data-force-target-index="'+j+'">'+
           '<div class="force-target-card-head"><div class="force-target-card-title">'+escapeHtml(label)+'</div><div class="force-target-card-status">'+(ardor?'gestione proiettili':'esito individuale')+'</div></div>'+
           '<div class="force-target-fields">'+
-            '<div class="force-field full"><label>Nome del bersaglio <span class="force-status-tag">facoltativo</span></label><input type="text" data-ft-field="name" value="'+escapeHtml(it.name||'')+'" placeholder="Es. Harry Potter"></div>'+
+            '<div class="force-field full"><label>Nome del bersaglio <span class="force-status-tag">facoltativo</span></label><input type="text" data-ft-field="name" name="forceTargetName_'+j+'" autocomplete="off" value="'+escapeHtml(it.name||'')+'" placeholder="Es. Harry Potter"></div>'+
             (ardor
-              ? '<div class="force-field"><label>Proiettili indirizzati</label><input type="number" data-ft-field="projectiles" min="1" max="'+maxTargets+'" step="1" value="'+Math.max(1,Number(it.projectiles)||1)+'"></div><div class="force-field"><label>Proiettili andati a segno</label><input type="number" data-ft-field="hits" min="0" max="'+Math.max(1,Number(it.projectiles)||1)+'" step="1" value="'+Math.max(0,Number(it.hits)||0)+'"></div>'
-              : '<div class="force-field full"><label>Esito sul bersaglio</label><select data-ft-field="hit"><option value="hit"'+(it.hit!=='miss'?' selected':'')+'>Colpito</option><option value="miss"'+(it.hit==='miss'?' selected':'')+'>Non colpito / si difende</option></select></div>')+
-            '<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
-            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'+
+              ? '<div class="force-field"><label>Proiettili indirizzati</label><input type="number" data-ft-field="projectiles" name="forceTargetProjectiles_'+j+'" autocomplete="off" min="1" max="'+maxTargets+'" step="1" value="'+Math.max(1,Number(it.projectiles)||1)+'"></div><div class="force-field"><label>Proiettili andati a segno</label><input type="number" data-ft-field="hits" name="forceTargetHits_'+j+'" autocomplete="off" min="0" max="'+Math.max(1,Number(it.projectiles)||1)+'" step="1" value="'+Math.max(0,Number(it.hits)||0)+'"></div>'
+              : '<div class="force-field full"><label>Esito sul bersaglio</label><select data-ft-field="hit" name="forceTargetHit_'+j+'" autocomplete="off"><option value="hit"'+(it.hit!=='miss'?' selected':'')+'>Colpito</option><option value="miss"'+(it.hit==='miss'?' selected':'')+'>Non colpito / si difende</option></select></div>')+
+            '<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" name="forceTargetResistance_'+j+'" autocomplete="off" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
+            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" name="forceTargetHealth_'+j+'" autocomplete="off" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'+
           '</div><div class="force-target-result" data-ft-result="'+j+'"></div></div>';
       }
       targetList.innerHTML=list;
@@ -4300,7 +4307,14 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var manager=qs('forceMultiTargetManager'); if(!manager)return;
     manager.addEventListener('click',function(ev){
       var b=ev.target.closest&&ev.target.closest('[data-force-target-count]'); if(!b)return;
-      state.forceTargets.count=Number(b.getAttribute('data-force-target-count'))||1;
+      var oldCount=Math.max(1,Number(state.forceTargets&&state.forceTargets.count)||1);
+      var newCount=Math.max(1,Number(b.getAttribute('data-force-target-count'))||1);
+      if(!state.forceTargets)state.forceTargets={signature:'',count:1,items:[]};
+      state.forceTargets.count=newCount;
+      /* Se si aggiungono bersagli, i nuovi slot devono nascere davvero vuoti. */
+      if(newCount>oldCount){
+        for(var ni=oldCount;ni<newCount;ni++){state.forceTargets.items[ni]=forceBlankTargetItem();}
+      }
       refreshForceCard(); refreshModifierSummary();
     });
     manager.addEventListener('input',function(ev){forceSyncTargetStateFromDom(ev.target);refreshForceCard();refreshModifierSummary();});
@@ -4668,6 +4682,30 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return out;
   }
 
+  /* v41 — restituisce i bersagli realmente interessati dall'azione corrente.
+     Serve al riepilogo per non comprimere in una sola riga bonus/malus destinati a più PG. */
+  function modifierAffectedTargetLabels(){
+    var labels=[];
+    if(!state.selectedEntry || !state.forceTargets || !state.forceTargets.items)return labels;
+    var pct=state.lastPct;
+    var maxTargets=forceMaxTargetsForCurrentContext(state.selectedEntry,pct);
+    if(maxTargets<=1)return labels;
+    var ft=state.forceTargets, ardor=forceIsArdorConvergence(maxTargets);
+    var count=Math.max(1,Math.min(Number(ft.count)||1,ft.items.length));
+    for(var i=0;i<count;i++){
+      var item=ft.items[i]||forceBlankTargetItem(), affected=false;
+      if(ardor){
+        var projectiles=Math.max(1,Math.floor(Number(item.projectiles)||1));
+        var hits=Math.max(0,Math.min(projectiles,Math.floor(Number(item.hits)||0)));
+        affected=hits>0;
+      }else{
+        affected=item.hit!=='miss';
+      }
+      if(affected)labels.push(forceTargetLabel(item,i));
+    }
+    return labels;
+  }
+
   function buildModifierData(){
     var items = [];
     var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
@@ -4687,7 +4725,19 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         items.push({kind:'target',label:'Effetto sul bersaglio',text:targetEffectBox.dataset.copyText});
       }
       var afterUse = modifierContextualAfterUseEffects(state.selectedEntry);
-      for(var au=0;au<afterUse.length;au++){ items.push(afterUse[au]); }
+      var affectedTargetLabels = modifierAffectedTargetLabels();
+      var multiTargetContext = forceMaxTargetsForCurrentContext(state.selectedEntry,state.lastPct)>1;
+      for(var au=0;au<afterUse.length;au++){
+        var afterItem=afterUse[au];
+        if(afterItem.kind==='after-target' && multiTargetContext){
+          /* Un effetto sul bersaglio viene registrato una volta per ogni bersaglio realmente colpito. */
+          for(var at=0;at<affectedTargetLabels.length;at++){
+            items.push({kind:'after-target',label:afterItem.label+' — '+affectedTargetLabels[at],text:afterItem.text});
+          }
+        }else{
+          items.push(afterItem);
+        }
+      }
 
       var fatigue = getFatigueValues();
       if (fatigue.length){
