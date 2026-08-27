@@ -4,6 +4,7 @@
 
 
 <!DOCTYPE html>
+<!-- v40: scheda Conoscenza nella Forza coordinata alla Riuscita + riepilogo con bonus/malus post-utilizzo -->
 <!-- v39: moduli Riuscita e Forza chiusi all’apertura, selettore superiore coordinato agli altri tool -->
 <!-- v38: Riuscita e Forza separate in due moduli collegati ma utilizzabili indipendentemente -->
 <!-- v31: riepilogo medimagico sempre visibile per Incantesimi che causano perdita di Salute -->
@@ -1506,9 +1507,59 @@
     background:rgba(255,251,238,.32);
   }
 
+  /* v40 — la Conoscenza selezionata nella Forza usa lo stesso layout compatto della Riuscita. */
+  #forceKnowledgeCard .knowledge-link-box{
+    min-height:0;
+    padding:9px 11px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    text-align:left;
+    background:#fffaf0;
+    border:1px solid var(--line);
+    border-radius:6px;
+  }
+  #forceKnowledgeCard .knowledge-link-main{flex:1 1 auto;min-width:0;}
+  #forceKnowledgeCard .knowledge-link-title{
+    flex:1 1 auto;
+    min-width:0;
+    margin:0;
+    font-size:21px;
+    line-height:1.1;
+  }
+  #forceKnowledgeCard .knowledge-effect-summary{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;
+    font-size:12.5px;line-height:1.35;color:#654e34;
+  }
+  #forceKnowledgeCard .knowledge-effect-label{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:#765b3b;margin-right:2px;
+  }
+  #forceKnowledgeCard .knowledge-effect-chip{
+    display:inline-flex;align-items:center;gap:4px;padding:4px 7px;border:1px solid rgba(184,154,90,.65);
+    border-radius:999px;background:#fffdf6;color:#4f3a26;white-space:nowrap;
+  }
+  #forceKnowledgeCard .knowledge-effect-chip strong{color:var(--maroon-deep);}
+  #forceKnowledgeCard .knowledge-link-note{display:none;}
+  #forceKnowledgeCard .knowledge-link-button{
+    flex:0 0 auto;
+    padding:7px 11px;
+    border-radius:6px;
+    font-size:13px;
+    white-space:nowrap;
+    box-shadow:none;
+  }
+
+  /* v40 — nel riepilogo distingui gli effetti che restano all'evocatore o al bersaglio. */
+  .modifier-item.mod-after-caster{border-left-color:#77547f;background:rgba(119,84,127,.055);}
+  .modifier-item.mod-after-target{border-left-color:#8b3548;background:rgba(139,53,72,.05);}
+
   @media(max-width:640px){
     .tool-module-switcher{grid-template-columns:1fr;}
     .tool-module-switch-btn{min-height:52px;padding:11px 12px;font-size:15px;}
+    #forceKnowledgeCard .knowledge-link-box{align-items:stretch;flex-direction:column;}
+    #forceKnowledgeCard .knowledge-link-button{width:100%;}
   }
 </style>
 
@@ -1882,7 +1933,7 @@
 
   <div class="card hidden" id="modifiersCard">
     <p class="step-label"><span class="num"><i class="fa-solid fa-scroll" aria-hidden="true"></i></span>Riepilogo utilizzo</p>
-    <p class="note">Mostra solo ciò che serve dopo l'utilizzo: Conoscenza usata, Fatica consumata, bonus/malus applicati e consumi degli eventuali oggetti o effetti a usi limitati.</p>
+    <p class="note">Mostra solo ciò che serve dopo l'utilizzo: Conoscenza usata, Fatica consumata, effetti concreti, eventuali bonus/malus che restano all’evocatore o al bersaglio e consumi degli oggetti o effetti a usi limitati.</p>
     <div class="modifier-summary" id="modifierSummary"></div>
     <label class="field-label" for="modifierCodeBox">Riepilogo copiabile per il forum</label>
     <textarea id="modifierCodeBox" readonly rows="6"></textarea>
@@ -4510,6 +4561,113 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return out;
   }
 
+  /* v40 — effetti successivi all'uso: usa la riuscita e il tipo di PG già selezionati. */
+  function modifierPctMatches(spec,pct){
+    if(pct===null || typeof pct==='undefined')return false;
+    var s=String(spec||'').replace(/\s+/g,'');
+    var p=Number(pct);
+    if(!isFinite(p))return false;
+    if(/^\d+$/.test(s))return Number(s)===p;
+    var m=s.match(/^(\d+)[-–/](\d+)$/);
+    if(m)return p>=Number(m[1]) && p<=Number(m[2]);
+    return false;
+  }
+
+  function modifierResolvedRuleValue(entry,block,row){
+    var value=String(row&&row.value||'').trim();
+    if(!row || !row.formula)return value;
+    var key=ruleResultKey(entry,block,row), stored=state.extraRollResults[key], parts=diceParts(row.formula);
+    if(stored===undefined || stored===null || !parts)return value;
+    var n=Number(stored);
+    if(!isFinite(n))return value;
+    return replaceFormulaWithResolved(value,row.formula,parts.before+n+parts.after);
+  }
+
+  function modifierAfterUseSignal(text){
+    return /\b(?:malus|bonus|perd(?:e|ono|ita|ono)?|acquis(?:isce|iscono|ito)?|ottien(?:e|gono)|ricev(?:e|ono)|subisc(?:e|ono)|recuper(?:a|ano)|ripristin(?:a|ano)|riduc(?:e|ono)|diminuisc(?:e|ono)|aument(?:a|ano)|increment(?:a|ano)|intacc(?:a|ano))\b/i.test(String(text||''));
+  }
+
+  function modifierAfterUseSubject(text){
+    var t=String(text||'');
+    var caster=/(?:evocatore|chi\s+(?:lancia|evoca|usa)|pg\s+che\s+(?:lancia|evoca|usa))/i.test(t);
+    var target=/(?:bersaglio|avversario|vittima)/i.test(t);
+    if(caster && !target)return 'caster';
+    if(target && !caster)return 'target';
+    if(target)return 'target';
+    if(caster)return 'caster';
+    return '';
+  }
+
+  function modifierAfterUseLabel(subject,text){
+    var t=String(text||'');
+    var plus=/\bbonus\b|\+\s*\d|acquis|ottien|ricev|recuper|ripristin|aument|increment/i.test(t);
+    var minus=/\bmalus\b|-\s*\d|\bperd|subisc|riduc|diminuisc|intacc/i.test(t);
+    var kind=plus&&minus?'Bonus / malus':(plus?'Bonus':(minus?'Malus':'Effetto'));
+    return kind+(subject==='caster'?' dell’evocatore':' del bersaglio');
+  }
+
+  function modifierCompactText(text,maxLen){
+    var t=cleanText(String(text||'')).replace(/^[-–—•·]\s*/,'');
+    maxLen=maxLen||280;
+    if(t.length>maxLen)t=t.slice(0,maxLen-1).replace(/[\s,;:]+$/,'')+'…';
+    return t;
+  }
+
+  function modifierCurrentAudienceKey(){
+    if(state.pg==='studente')return 'studente';
+    if(state.pg!=='adulto')return '';
+    try{return forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza';}catch(e){return selectedAudienceRuleKey(state.selectedEntry);}
+  }
+
+  function modifierCasterSpecificEffect(entry){
+    if(!entry || !entry.html || state.lastPct===null || !state.pg)return null;
+    var plain=rulePlainText(entry.html);
+    /* Questo ramo serve soprattutto per effetti morali/parametrici dell'evocatore
+       descritti fuori dalle normali tabelle percentuali (es. Magia Oscura). */
+    if(!/(?:evocatore|pg)[\s\S]{0,260}(?:perde|perdono|ottiene|ottengono|acquisisce|acquisiscono|subisce|subiscono)/i.test(plain))return null;
+    var wanted=modifierCurrentAudienceKey(), lines=plain.split(/\n+/);
+    for(var i=0;i<lines.length;i++){
+      var line=cleanText(lines[i]); if(!line)continue;
+      var key=ruleAudienceKey(line); if(!key || key!==wanted)continue;
+      if(!modifierAfterUseSignal(line))continue;
+      if(!/(?:Empatia|Volontà|Salute|Destrezza|Fatica|Resistenza|Potenza|Acume|Percezione|Tecnica|Parametr)/i.test(line))continue;
+      var start=line.search(/\b(?:perdono|perde|acquisiscono|acquisisce|ottengono|ottiene|ricevono|riceve|subiscono|subisce)\b/i);
+      var text=start>=0?line.slice(start):line.replace(/^.*?:\s*/,'');
+      return {kind:'after-caster',label:modifierAfterUseLabel('caster',text),text:modifierCompactText(text,300)};
+    }
+    return null;
+  }
+
+  function modifierContextualAfterUseEffects(entry){
+    var out=[];
+    if(!entry || state.lastPct===null || typeof state.lastPct==='undefined' || !state.pg)return out;
+    var blocks=extractAudienceRuleBlocks(entry), wanted=selectedAudienceRuleKey(entry)||modifierCurrentAudienceKey();
+    for(var b=0;b<blocks.length;b++){
+      var block=blocks[b];
+      if(block.key!==wanted){
+        if(!(wanted.indexOf('adulto-')===0 && block.key==='adulto'))continue;
+      }
+      for(var r=0;r<block.outcomes.length;r++){
+        var row=block.outcomes[r];
+        if(!modifierPctMatches(row.pct,state.lastPct))continue;
+        var value=modifierResolvedRuleValue(entry,block,row);
+        var context=[block.heading,block.intro,value].join(' ');
+        if(!modifierAfterUseSignal(context))continue;
+        /* Evita blocchi che descrivono solo quantità, gittata, bersagli o durata neutra. */
+        if(!/(?:malus|bonus|perd|acquis|ottien|ricev|subisc|recuper|ripristin|riduc|diminuisc|aument|increment|intacc)/i.test(context))continue;
+        var subject=modifierAfterUseSubject(context)||'target';
+        var heading=modifierCompactText(block.heading||'',90);
+        var text=value;
+        if(heading && !new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i').test(value))text=heading+' — '+value;
+        var item={kind:subject==='caster'?'after-caster':'after-target',label:modifierAfterUseLabel(subject,context),text:modifierCompactText(text,300)};
+        if(!out.some(function(x){return x.kind===item.kind && x.text===item.text;}))out.push(item);
+      }
+    }
+    var caster=modifierCasterSpecificEffect(entry);
+    if(caster && !out.some(function(x){return x.kind===caster.kind && x.text===caster.text;}))out.push(caster);
+    return out;
+  }
+
   function buildModifierData(){
     var items = [];
     var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
@@ -4528,6 +4686,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       if(targetEffectBox && !targetEffectBox.classList.contains('hidden') && targetEffectBox.dataset.copyText){
         items.push({kind:'target',label:'Effetto sul bersaglio',text:targetEffectBox.dataset.copyText});
       }
+      var afterUse = modifierContextualAfterUseEffects(state.selectedEntry);
+      for(var au=0;au<afterUse.length;au++){ items.push(afterUse[au]); }
+
       var fatigue = getFatigueValues();
       if (fatigue.length){
         for (var f=0;f<fatigue.length;f++){
