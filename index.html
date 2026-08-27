@@ -4,6 +4,7 @@
 
 
 <!DOCTYPE html>
+<!-- v45: pallini solo per vere liste di PG nel riepilogo copiabile -->
 <!-- v44: riepilogo multi-bersaglio su righe separate con punto elenco -->
 <!-- v43: bersagli multipli a schede: viene mostrato un solo bersaglio alla volta -->
 <!-- v42: isolamento bersagli rinforzato: nessun autofill/clonazione dei campi tra bersagli -->
@@ -4853,11 +4854,53 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var nomeCon = state.selectedEntry ? state.selectedEntry.name : cleanText(qs('nomeConoscenza').value);
     if (!nomeCon){ nomeCon = 'Conoscenza'; }
     var lines = ['<b>' + nomeCon + '</b>'];
+    var groupedTargetEffects = {};
+    var groupedTargetOrder = [];
+
     for (var i=0;i<items.length;i++){
-      if (items[i].kind === 'knowledge'){ continue; }
-      lines.push('• <b>' + items[i].label + ':</b> ' + items[i].text);
+      var item=items[i];
+      if (item.kind === 'knowledge'){ continue; }
+
+      /* v45 — il pallino indica soltanto una vera lista di PG.
+         Gli effetti post-utilizzo dei singoli bersagli vengono quindi raggruppati
+         sotto un'intestazione normale, con un punto elenco per ciascun PG. */
+      if(item.kind==='after-target'){
+        var marker=' — ';
+        var cut=item.label.lastIndexOf(marker);
+        if(cut>0){
+          var baseLabel=item.label.slice(0,cut);
+          var pgLabel=item.label.slice(cut+marker.length);
+          if(!groupedTargetEffects[baseLabel]){
+            groupedTargetEffects[baseLabel]=[];
+            groupedTargetOrder.push(baseLabel);
+          }
+          groupedTargetEffects[baseLabel].push({pg:pgLabel,text:item.text});
+          continue;
+        }
+      }
+
+      /* Gli altri dati del riepilogo sono righe informative, non elementi di lista.
+         Se il testo contiene già una lista di bersagli (generata da forceDamageBox),
+         l'intestazione resta senza pallino e i soli nomi dei PG restano puntati. */
+      var text=String(item.text||'');
+      if(/^\n• /.test(text)){
+        lines.push('<b>' + item.label + ':</b>' + text);
+      }else{
+        lines.push('<b>' + item.label + ':</b> ' + text);
+      }
     }
-    if (lines.length === 1){ lines.push('• Nessun costo o modificatore da registrare.'); }
+
+    for(var g=0;g<groupedTargetOrder.length;g++){
+      var label=groupedTargetOrder[g];
+      var rows=groupedTargetEffects[label]||[];
+      if(!rows.length)continue;
+      lines.push('<b>'+label+':</b>');
+      for(var r=0;r<rows.length;r++){
+        lines.push('• <b>'+rows[r].pg+':</b> '+rows[r].text);
+      }
+    }
+
+    if (lines.length === 1){ lines.push('Nessun costo o modificatore da registrare.'); }
     return lines.join('\n');
   }
 
