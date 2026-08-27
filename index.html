@@ -1,4 +1,5 @@
 
+<!-- Revisione v51: corretto il bridge fra il motore medimagico e i moduli Piante/Creature/Pozioni; ora %, Sintomi e import San Mungo vengono realmente renderizzati. -->
 <!-- Revisione v50: Piante/Creature/Pozioni usano lo stesso flusso medimagico degli Incantesimi: prompt Salute totale, %, Sintomi e import San Mungo. -->
 <!-- Revisione v49: Piante, Creature e Pozioni trasferiscono automaticamente percentuale di Salute persa, Sintomi e importazione al San Mungo quando l'utilizzo danneggia Salute -->
 
@@ -5505,6 +5506,36 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     document.fonts.ready.then(function(){ sendHeight(true); });
   }
 
+  /* v51 — API condivisa per i moduli materiali.
+     Il motore medimagico vive in questa closure: le versioni precedenti provavano
+     a richiamare medBuildResult/MED_CAUSE_DB da uno script successivo, dove non
+     erano visibili. Esponiamo soltanto le funzioni necessarie mantenendo i dati
+     clinici e la logica di matching all'interno di questa closure. */
+  window.FFGDR_MEDICAL_BRIDGE_V1={
+    buildResult:function(type,causeName,healthLost,healthTotal,targetLabel){
+      return medBuildResult(type,causeName,healthLost,healthTotal,targetLabel);
+    },
+    resolveCauseName:function(type,itemName,attackLabel){
+      var t=String(type||''), target=medNormalizeName(itemName), attack=medNormalizeName(attackLabel||'');
+      if(!target)return String(itemName||'');
+      var pool=MED_CAUSE_DB.filter(function(x){return x.type===t;});
+      var cand=pool.filter(function(x){
+        var n=medNormalizeName(x.name);
+        return n.indexOf(target)!==-1 || target.indexOf(n)!==-1;
+      });
+      if(!cand.length)return String(itemName||'');
+      var toks=attack.split(' ').filter(function(tok){return tok.length>3;});
+      var best=cand[0], bestScore=-1;
+      cand.forEach(function(x){
+        var n=medNormalizeName(x.name), score=0;
+        toks.forEach(function(tok){if(n.indexOf(tok)!==-1)score++;});
+        if(score>bestScore){best=x;bestScore=score;}
+      });
+      return best&&best.name?best.name:String(itemName||'');
+    },
+    sendHeightSoon:function(){sendHeightSoon();}
+  };
+
   bindForceInputs();
   medPopulateCauseLists();
   bindCombatInputs();
@@ -5566,7 +5597,13 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
 (function(){
   'use strict';
   var DB=window.FFGDR_MATERIAL_DB;
+  var MEDICAL=window.FFGDR_MEDICAL_BRIDGE_V1||null;
   var state={plant:{item:null,mods:[],variant:'',attack:'',lastResult:''},creature:{item:null,mods:[],variant:'',attack:'',lastResult:''},potion:{item:null,parsed:null,lastResult:''}};
+  function medicalBuild(type,causeName,healthLost,healthTotal,targetLabel){
+    if(!MEDICAL||typeof MEDICAL.buildResult!=='function')return {html:'',copy:''};
+    return MEDICAL.buildResult(type,causeName,healthLost,healthTotal,targetLabel)||{html:'',copy:''};
+  }
+  function materialHeightSoon(){if(MEDICAL&&typeof MEDICAL.sendHeightSoon==='function')MEDICAL.sendHeightSoon();}
   function q(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function norm(v){try{return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}catch(e){return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}}
@@ -5609,7 +5646,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
   function attackOptions(type,item,comp){var vals={};Object.keys(comp.values).forEach(function(k){vals[k]=comp.values[k].effective});var list=[];Object.keys(vals).forEach(function(k){if(norm(k).indexOf('forza')===-1)return;var lm=labelMap(vals[k]),labs=Object.keys(lm);if(labs.length){labs.forEach(function(l){list.push({id:k+'::'+l,label:(norm(k)==='forza attacco'?'':k.replace(/forza/ig,'').trim()+' — ')+l,expr:lm[l]})})}else{var label=k.replace(/forza/ig,'').trim();if(!label||norm(label)==='attacco')label='Attacco / utilizzo principale';list.push({id:k,label:label,expr:vals[k]})}});if((item.fixedEffectsAuto||[]).length||(!list.length&&shortSpecific(item))){list.unshift({id:'specific',label:'Effetto specifico dello specchietto',expr:''})}return list}
   function setAttackSelect(type,item,comp,reset){var id=type==='plant'?'plantAttackType2':'creatureAttackType2',sel=q(id),opts=attackOptions(type,item,comp);if(!sel)return null;var old=state[type].attack;if(reset||!opts.some(function(x){return x.id===old}))old=opts.length?opts[0].id:'';state[type].attack=old;sel.innerHTML=opts.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===old?' selected':'')+'>'+esc(x.label)+'</option>'}).join('')||'<option value="">Nessun attacco con Forza tabellata</option>';return opts.find(function(x){return x.id===old})||opts[0]||null}
   function updateVariantUI(type,item){var wrap=q('creatureVariantWrap2'),sel=q('creatureVariant2');if(type!=='creature'||!wrap||!sel)return;var opts=variantOptions(item);wrap.classList.toggle('hidden',!opts.length);if(opts.length){var current=state.creature.variant;if(!opts.some(function(x){return x.id===current}))current=opts[0].id;state.creature.variant=current;sel.innerHTML=opts.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===current?' selected':'')+'>'+esc(x.label)+'</option>'}).join('')}}
-  function causeFor(type,item,attackLabel){if(typeof MED_CAUSE_DB==='undefined')return item.name;var t=type==='plant'?'pianta':'creatura',ni=norm(item.name),na=norm(attackLabel||''),cand=MED_CAUSE_DB.filter(function(x){return x.type===t&&norm(x.name).indexOf(ni)!==-1});if(!cand.length)return item.name;var best=cand[0],score=-1;cand.forEach(function(x){var nx=norm(x.name),sc=0;na.split(' ').forEach(function(tok){if(tok.length>3&&nx.indexOf(tok)!==-1)sc++});if(sc>score){score=sc;best=x}});return best.name}
+  function causeFor(type,item,attackLabel){var t=type==='plant'?'pianta':'creatura';if(MEDICAL&&typeof MEDICAL.resolveCauseName==='function')return MEDICAL.resolveCauseName(t,item.name,attackLabel)||item.name;return item.name}
   function effectLines(params,effects,health,other){var lines=[],hasHealth=(params||[]).some(function(x){return norm(x)==='salute'});(params||[]).forEach(function(p){var meta=effects&&effects[p]||{sign:'-',factor:1},np=norm(p),sg=meta.sign==='+'?'+':meta.sign==='-'?'-':'±',cl=sg==='+'?'material-effect-plus':sg==='-'?'material-effect-minus':'material-effect-unknown';if(np.indexOf('parametri fisici')!==-1){if(!hasHealth)lines.push('<div class="material-effect-line"><span class="'+cl+'">'+sg+fmt(health*(meta.factor||1))+'</span> Salute</div>');lines.push('<div class="material-effect-line"><span class="'+cl+'">'+sg+fmt(other*(meta.factor||1))+'</span> altri Parametri Fisici</div>');return}var amt=(np==='salute'?health:other)*(meta.factor||1);lines.push('<div class="material-effect-line"><span class="'+cl+'">'+sg+fmt(amt)+'</span> '+esc(p)+'</div>')});return lines.join('')}
   function materialHealthDamage(params,effects,health){
     if(!(health>=0))return null;
@@ -5662,9 +5699,9 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
           fixedLost=personalSpecific?null:fixedHealthDamage(item),
           medObj={html:'',copy:''},healthInput=q(pfx+'TargetHealth2'),causeName=q(pfx+'MedicalCause2').value;
       if(healthInput)healthInput.classList.remove('medical-needed');
-      if(fixedLost!=null&&typeof medBuildResult==='function'){
+      if(fixedLost!=null&&MEDICAL&&typeof MEDICAL.buildResult==='function'){
         if(totalHealth!=null&&totalHealth>0){
-          medObj=medBuildResult(type==='plant'?'pianta':'creatura',causeName,fixedLost,totalHealth,'Bersaglio')||medObj;
+          medObj=medicalBuild(type==='plant'?'pianta':'creatura',causeName,fixedLost,totalHealth,'Bersaglio');
         }else{
           if(healthInput)healthInput.classList.add('medical-needed');
           medObj.html=materialMedicalPrompt(type==='plant'?'Pianta':'Creatura',causeName,fixedLost,'Bersaglio');
@@ -5674,7 +5711,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
       dest.innerHTML='<div class="material-specific-effect"><strong>'+(personalSpecific?'Effetto personale:':'Effetto regolamentare:')+'</strong> '+esc(note||'come da Specifiche')+'</div>'+fx+(medObj.html||'');
       wrap.classList.remove('hidden');
       st.lastResult=(type==='plant'?'Pianta: ':'Creatura: ')+item.name+' · '+(note||'Effetto specifico')+(fx?' · '+(item.fixedEffectsAuto||[]).map(function(e){return e.sign+fmt(e.value)+' '+e.param}).join(', '):'')+(medObj.copy?' · '+medObj.copy:'');
-      if(typeof sendHeightSoon==='function')sendHeightSoon();
+      materialHeightSoon();
       return;
     }
 
@@ -5692,9 +5729,9 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
     if(!lines)lines='<div class="material-muted">La Pianta non indica un Parametro numerico da modificare con questa formula.</div>';
     var healthLost=materialHealthDamage(params,effects,health),medObj={html:'',copy:''},healthInput=q(pfx+'TargetHealth2'),causeName=q(pfx+'MedicalCause2').value;
     if(healthInput)healthInput.classList.remove('medical-needed');
-    if(healthLost!=null&&typeof medBuildResult==='function'){
+    if(healthLost!=null&&MEDICAL&&typeof MEDICAL.buildResult==='function'){
       if(totalHealth!=null&&totalHealth>0){
-        medObj=medBuildResult(type==='plant'?'pianta':'creatura',causeName,healthLost,totalHealth,'Bersaglio')||medObj;
+        medObj=medicalBuild(type==='plant'?'pianta':'creatura',causeName,healthLost,totalHealth,'Bersaglio');
       }else{
         if(healthInput)healthInput.classList.add('medical-needed');
         medObj.html=materialMedicalPrompt(type==='plant'?'Pianta':'Creatura',causeName,healthLost,'Bersaglio');
@@ -5703,7 +5740,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
     dest.innerHTML='<div class="material-result-meta">'+esc(meta)+'</div>'+lines+(medObj.html||'');
     wrap.classList.remove('hidden');
     st.lastResult=(type==='plant'?'Pianta: ':'Creatura: ')+item.name+' · '+meta+' · '+params.map(function(p){var em=effects[p]||((norm(p)==='salute'&&effects.Salute)?effects.Salute:{sign:'-',factor:1});var amt=(norm(p)==='salute'?health:other)*(em.factor||1);return (em.sign||'-')+fmt(amt)+' '+p}).join(', ')+(medObj.copy?' · '+medObj.copy:'');
-    if(typeof sendHeightSoon==='function')sendHeightSoon();
+    materialHeightSoon();
   }
 
   function renderEntity(type,resetUse){var st=state[type],item=st.item,pfx=type==='plant'?'plant':'creature';if(!item)return;updateVariantUI(type,item);var comp=computeValues(type);q(pfx+'SelectedCard').classList.remove('hidden');q(pfx+'ConfigCard').classList.remove('hidden');q(pfx+'UseCard').classList.remove('hidden');q(pfx+'SelectedName').textContent=item.name;var ck=findKey(comp.values,'Classificazione');q(pfx+'SelectedSub').textContent=ck?'Classificazione '+comp.values[ck].base:'Dati caricati dal '+(type==='plant'?'Erbario':'Bestiario');renderEntityBaseValues(type,comp);if(type==='plant')q('plantGrowerLevelWrap').classList.toggle('hidden',q('plantOrigin').value!=='grown');else q('creatureBreederLevelWrap').classList.toggle('hidden',q('creatureOrigin').value!=='bred');var ruleBox=q(pfx+'PersonalRule');if(comp.personal){var who=type==='plant'?'Coltivatore':'Allevatore';ruleBox.innerHTML='<strong>'+who+' '+roman(comp.level)+':</strong> '+esc(ruleDetail(comp.rule))}else ruleBox.innerHTML='<strong>Esemplare standard:</strong> nessun bonus da coltivazione/allevamento personale.';var extra=comp.personal&&comp.mode==='duration'&&comp.rule?'<div class="material-specific-effect"><strong>Bonus personale:</strong> '+esc(ruleDetail(comp.rule))+'</div>':'';q(pfx+'EffectiveResult').innerHTML=valuesHtml(comp)+extra+(modsSummary(type)?'<div class="material-result-meta"><strong>Bonus esterni:</strong> '+esc(modsSummary(type))+'</div>':'');var attack=setAttackSelect(type,item,comp,resetUse);if(resetUse){var f=q(pfx+'UseForce2');if(f){delete f.dataset.manual;f.value=''}q(pfx+'TargetResistance2').value='';q(pfx+'TargetHealth2').value='';if(type==='creature'){q('creatureFatigueMax2').value='';q('creatureFatigueCurrent2').value=''}if(attack&&attack.expr){var n=numericExpression(attack.expr);if(n!=null)q(pfx+'UseForce2').value=n}if(type==='creature'){var fv=findKey(Object.fromEntries(Object.keys(comp.values).map(function(k){return [k,comp.values[k].effective]})),'Fatica');if(fv){var fn=numericExpression(comp.values[fv].effective);if(fn!=null){q('creatureFatigueMax2').value=fn;q('creatureFatigueCurrent2').value=fn}}}}renderEntityUse(type)}
@@ -5719,9 +5756,9 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
     var raw=Math.pow(Math.max(0,(p.force*.6)*dose/res),.6),h=Math.round(raw),o=Math.round(raw/5),lines=effectLines(pe.params,pe.effects,h,o);
     if(!lines){lines='<div class="material-specific-effect">'+esc(item.affectedParams||item.effectNoteAuto||'Effetto regolamentare come da Specifiche.')+'</div>'}
     var healthLost=materialHealthDamage(pe.params,pe.effects,h),medObj={html:'',copy:''};
-    if(healthLost!=null&&typeof medBuildResult==='function'){
+    if(healthLost!=null&&MEDICAL&&typeof MEDICAL.buildResult==='function'){
       if(healthTotal!=null&&healthTotal>0){
-        medObj=medBuildResult('pozione',item.name,healthLost,healthTotal,label)||medObj;
+        medObj=medicalBuild('pozione',item.name,healthLost,healthTotal,label);
       }else{
         if(healthInput)healthInput.classList.add('medical-needed');
         medObj.html=materialMedicalPrompt('Pozione',item.name,healthLost,label);
@@ -5749,7 +5786,7 @@ window.FFGDR_MATERIAL_DB={"plant":[{"id":"aconito","name":"Aconito","values":{"C
     var wrap=q('potionUseResultWrap2'),dest=q('potionUseResult2');
     if(!html){wrap.classList.add('hidden');dest.innerHTML='';st.lastResult='';return}
     dest.innerHTML=html;wrap.classList.remove('hidden');st.lastResult='Pozione: '+item.name+' · Forza '+fmt(p.force)+' · '+copies.join(' · ');
-    if(typeof sendHeightSoon==='function')sendHeightSoon();
+    materialHeightSoon();
   }
   function loadPotionFromPaste(){var status=q('potionParseStatus2');try{var p=parseInventory(q('potionInventoryPaste2').value),item=itemByName('potion',p.name);if(!item)throw new Error('La frase è valida, ma «'+p.name+'» non è presente nel Pozionario del tool.');state.potion={item:item,parsed:p,lastResult:''};status.textContent='Caricata: '+item.name+'.';renderPotion()}catch(e){status.textContent=e.message||'Impossibile leggere la frase.';q('potionSelectedCard2').classList.add('hidden');q('potionConfigCard2').classList.add('hidden');q('potionUseCard2').classList.add('hidden')}}
   function resetPotion(){state.potion={item:null,parsed:null,lastResult:''};q('potionInventoryPaste2').value='';q('potionParseStatus2').textContent='';['potionSelectedCard2','potionConfigCard2','potionUseCard2'].forEach(function(id){q(id).classList.add('hidden')});['potionTargetResistance2','potionTargetHealth2','potionUserResistance2','potionUserHealth2'].forEach(function(id){q(id).value=''});q('potionDoseFactor2').value='1';q('potionTargetEnabled2').checked=true;q('potionUserEnabled2').checked=false;['potionTargetHealth2','potionUserHealth2'].forEach(function(id){var e=q(id);if(e)e.classList.remove('medical-needed')});togglePotionSubjects()}
