@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -6,6 +5,8 @@
 <title>Medimagia — San Mungo</title>
 <!-- v41: import clinico ffmed consumato anche dall'URL; il refresh del Reparto Pazienti torna davvero vuoto -->
 <!-- v44: Incolla i Sintomi riconosce anche elenchi naturali separati da virgole e dalla congiunzione “e/ed” (es. A, B e C). -->
+<!-- v48: migrazione sicura delle sessioni v46 — le vecchie fonti OFFGame automatiche tornano “da confermare”; i nuovi salvataggi ricordano la conferma esplicita. -->
+<!-- v47: ritorno ai Guaritori senza effetto “dati spariti”; Sintomi OFFGame in bozza finché non confermati esplicitamente; Diagnosi non saltata senza conferma. -->
 <!-- v46: flusso Medimaghi snellito — PG sessione riusato; Sintomi OFFGame prima della Diagnosi; import automatico in Terapia/Chirurgia; riepiloghi a lista -->
 <!-- v45: ritentativi di Terapia/Chirurgia immediati e storicizzati in Pazienti e Medimaghi -->
 <!-- v42: inserimento Sintomi rapido — incolla libera del Narratore con riconoscimento approssimativo; filtro per Classificazione + ricerca testuale in Pazienti e Medimaghi -->
@@ -2258,7 +2259,7 @@ REPARTO MEDIMAGHI — stato
 const medimagoState = {
 guaritori: [], coda: [], causaNota: false,
 classiDiagnosi: new Set(), classiRiconosciute: {},
-sintomiIndividuati: new Set(), sintomiProvenienza: {}, diagActionCounter: 0, refreshCuraEffects:null, refreshListaDiagnosi:null
+sintomiIndividuati: new Set(), sintomiProvenienza: {}, sintomiOffgameBozza:new Set(), diagActionCounter: 0, refreshCuraEffects:null, refreshListaDiagnosi:null
 };
 function fontiClasse(c){ if(!medimagoState.classiRiconosciute[c]){medimagoState.classiRiconosciute[c]=new Set();} return medimagoState.classiRiconosciute[c]; }
 function classeRiconosciuta(c){ return fontiClasse(c).size>0; }
@@ -2286,7 +2287,7 @@ function validaDiagnosiInSospeso(){
 const p=diagnosiInSospeso();
 if(p){return 'Completa prima il risultato della Diagnosi '+p.e.classe+' già avviata da '+p.g.nome+'. Inserisci un risultato valido nella stessa riga prima di cambiare fase.';}
 const mancanti=Array.from(medimagoState.classiDiagnosi).filter(function(c){return !classeRiconosciuta(c);});
-if(mancanti.length){return 'Prima di passare alla Cura, ogni Classificazione selezionata deve risultare riconosciuta con successo oppure già nota/comunicata dal Narratore. Mancano: '+mancanti.join(', ')+'.';}
+if(mancanti.length){return 'Prima di passare alla Cura, ogni Classificazione selezionata deve risultare riconosciuta con successo oppure confermata esplicitamente come già nota OFFGame. Mancano: '+mancanti.join(', ')+'.';}
 return true;
 }
 function validaDiagnosiIndietro(){
@@ -2804,8 +2805,13 @@ const sessionName=String(sessionMeta.pgName||'').trim();
 const sessionCase=String(sessionMeta.caseName||'').trim();
 const reuseSessionName=!!sessionName && medimagoState.guaritori.length===0;
 const nameField=reuseSessionName?('<div class="field"><label>PG della sessione</label><div class="pill" id="g-session-name" style="display:inline-flex;padding:9px 14px">'+esc(sessionName)+'</div><input type="hidden" id="g-nome"></div>'):'<div class="field"><label>Nome del Guaritore aggiuntivo</label><input type="text" id="g-nome" placeholder="Es. Mira Ashwood"></div>';
+const hasExisting=medimagoState.guaritori.length>0;
+const formOpen=hasExisting?'<details class="rule-details" style="margin-top:14px"><summary>+ Aggiungi un altro Guaritore</summary><div class="rule-details-body">':'';
+const formClose=hasExisting?'</div></details>':'';
 body.innerHTML =
 (sessionName?'<div class="phase-summary"><b>Sessione:</b> '+esc(sessionName)+(sessionCase?' • '+esc(sessionCase):'')+'</div>':'')+
+(hasExisting?'<div class="panel" style="background:#fff"><h4>Guaritore già confermato</h4><p class="muted" style="margin:0">Il profilo resta salvato quando ti sposti fra Diagnosi, Cura e Riepilogo.</p><div id="g-lista" style="margin-top:12px"></div></div>':'')+
+formOpen+
 '<div class="panel" style="background:#fff">'+
 '<div class="grid2">'+nameField+
 '<div class="field"><label>Tecnica (valore base)</label><input type="number" id="g-tecnica" value="0" min="0" step="1"></div></div>'+
@@ -2824,8 +2830,8 @@ body.innerHTML =
 '<div class="med-preset-picker"><div class="field"><label>Scegli dal regolamento</label><select id="g-effect-preset"></select></div><button type="button" class="btn small gold" id="g-effect-preset-add">+ Inserisci</button></div>'+
 '<p class="med-preset-help">Magi Biografia e Talismano usano il bonus già ottenuto. Per Manualità, Omnis, Medimazoo e Nihil scegli l’esito dopo averlo determinato nel Generatore di Riuscita.</p>'+
 '<div id="g-effects-list"></div><div id="g-effect-warn" class="step-warning"></div></div>'+
-'<div style="margin-top:14px"><button type="button" class="btn gold" id="g-add">Conferma Guaritore</button></div></div>'+
-'<div id="g-lista" style="margin-top:16px"></div>';
+'<div style="margin-top:14px"><button type="button" class="btn gold" id="g-add">Conferma Guaritore</button></div></div>'+formClose+
+(hasExisting?'':'<div id="g-lista" style="margin-top:16px"></div>');
 setupNumericInputs(body);
 if(reuseSessionName){document.getElementById('g-nome').value=sessionName;}
 const effectsHost=document.getElementById('g-effects-list');
@@ -2960,7 +2966,7 @@ CLASSI.forEach(function(c){ checks += '<label class="pill" style="margin-right:8
 const classOptions='<option value="">— Scegli la Classificazione —</option>'+CLASSI.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
 body.innerHTML =
 '<div class="panel diag-known-panel" style="background:#fff"><h4>Sintomi noti OFFGame</h4>'+
-'<p class="muted">Inserisci qui ciò che il Narratore ha già comunicato. Questi Sintomi vengono considerati già noti OFFGame: la relativa Classificazione non richiede un tiro di Diagnosi.</p>'+
+'<p class="muted">Puoi preparare qui i Sintomi che sai già essere noti OFFGame. <b>Selezionarli o incollarli non salta ancora la Diagnosi:</b> diventano effettivamente noti soltanto dopo la conferma esplicita qui sotto.</p>'+
 '<details class="rule-details"><summary>Incolla i Sintomi</summary><div class="rule-details-body">'+
 '<div class="narrator-paste-box" style="margin:0"><textarea id="diag-narrator-paste" placeholder="Esempio: Graffi, Vertigini e Debolezza Muscolare\noppure: XX: fratture, vertigine"></textarea>'+
 '<div class="narrator-paste-actions"><button type="button" class="btn small gold" id="diag-narrator-apply">Riconosci e aggiungi</button><span class="muted">Nomi approssimativi e X/xx/Xx sono accettati; le voci dubbie restano da controllare.</span></div>'+
@@ -2969,6 +2975,8 @@ body.innerHTML =
 '<div class="sym-entry-tools"><div class="field"><label>1. Classificazione</label><select id="diag-offgame-class">'+classOptions+'</select></div>'+
 '<div class="field searchbar" style="margin-bottom:0"><label>2. Scrivi o cerca un Sintomo</label><input type="text" id="diag-ind-search" placeholder="Es. Frattura, Ustioni, Febbre..."></div></div>'+
 '<div class="sym-list" id="diag-ind-lista"></div></div></details>'+
+'<div id="diag-offgame-draft-summary" class="diag-known-state"></div>'+
+'<div style="margin-top:10px"><button type="button" class="btn gold" id="diag-offgame-confirm">Conferma Sintomi noti OFFGame</button></div>'+
 '<div id="diag-known-summary" class="diag-known-state"></div><div id="diag-prune-note" class="step-warning"></div></div>'+
 '<div class="phase-summary"><b>Diagnosi:</b> da 1 a 5d40 • -2 Fatica per azione (0 con Sapienza 25) • auto-diagnosi -20% • autoconclusiva da 40 • Conoscenze Medimagiche max +5</div>'+
 '<details class="rule-details"><summary>Regole, bonus e causa della malattia</summary><div class="rule-details-body">Una singola azione può comprendere un d40 per ciascuna Classificazione presente; nello stesso blocco la Fatica base si paga una sola volta. Un nuovo tentativo dopo un errore è una nuova azione.<br><br><b>Oggetti/Conoscenze:</b> i bonus generali alla Tecnica sono inclusi automaticamente. I bonus specifici si scelgono per la singola Classificazione; parametro prima, possibilità dopo, con massimo <b>+5 complessivi</b>. Usi e Fatica vengono consumati una sola volta per la stessa azione.<br><br><b>Causa/malattia:</b> se ancora sconosciuta, diventa nota individuando almeno il <b>60% dei Sintomi totali</b>. Questa percentuale non viene calcolata automaticamente perché il tool registra solo i Sintomi riconosciuti.</div></details>'+
@@ -2984,25 +2992,30 @@ function classiSel(){ return Array.prototype.map.call(body.querySelectorAll('.di
 function syncClassCheck(c){ const chk=body.querySelector('.diag-classe[value="'+c+'"]'); if(chk){chk.checked=medimagoState.classiDiagnosi.has(c);} }
 function markDiagRowsStale(msg){ const dadi=document.getElementById('diag-dadi'); if(dadi&&dadi.innerHTML.trim()){dadi.innerHTML='<div class="note"><b>'+msg+'</b> Genera nuovamente le righe di Diagnosi per avere controlli coerenti. Gli eventuali tiri già registrati restano nello storico.</div>';}}
 function renderKnownSummary(){
+ const draftHost=document.getElementById('diag-offgame-draft-summary');
+ if(draftHost){
+  const bozze=Array.from(medimagoState.sintomiOffgameBozza||[]).filter(function(id){return SINTOMI_BY_ID[id];});
+  draftHost.innerHTML=bozze.length?('<b>Da confermare:</b> '+bozze.map(function(id){const s=SINTOMI_BY_ID[id];return '<span class="pill"><span class="class-badge class-'+s.c+'">'+s.c+'</span> '+esc(s.n)+'</span>';}).join('')):'<span class="muted">Nessun Sintomo in attesa di conferma.</span>';
+ }
  const host=document.getElementById('diag-known-summary');if(!host)return;
  const ids=Array.from(medimagoState.sintomiIndividuati).filter(function(id){return SINTOMI_BY_ID[id];});
- if(!ids.length){host.innerHTML='<span class="muted">Nessun Sintomo noto OFFGame o già riconosciuto.</span>';return;}
- host.innerHTML=ids.map(function(id){const s=SINTOMI_BY_ID[id];return '<span class="pill"><span class="class-badge class-'+s.c+'">'+s.c+'</span> '+esc(s.n)+'</span>';}).join('');
+ if(!ids.length){host.innerHTML='<span class="muted">Nessun Sintomo ancora confermato OFFGame o riconosciuto in Diagnosi.</span>';return;}
+ host.innerHTML='<b>Già noti / riconosciuti:</b> '+ids.map(function(id){const s=SINTOMI_BY_ID[id];return '<span class="pill"><span class="class-badge class-'+s.c+'">'+s.c+'</span> '+esc(s.n)+'</span>';}).join('');
 }
 function renderLista(){
  const c=classInd.value,q=searchInd.value.trim().toLowerCase();
  if(!c){listaInd.innerHTML='<div class="muted" style="padding:12px 14px">Scegli prima la Classificazione.</div>';return;}
  const filtrati=SINTOMI.filter(function(ss){return ss.c===c && sintomoCorrispondeRicerca(ss,q);});
  let h='';filtrati.forEach(function(ss){
-   const fs=medimagoState.sintomiProvenienza[ss.id];const off=!!(fs&&fs.has('offgame'));const alt=medimagoState.sintomiIndividuati.has(ss.id)&&!off;
-   h+='<div class="sym-row'+(off?' checked':'')+'" data-id="'+ss.id+'"><input type="checkbox"'+(off?' checked':'')+'><span class="class-badge class-'+c+'">'+c+'</span><span class="nm">'+esc(ss.n)+(alt?' <span class="muted">· già riconosciuto in Diagnosi</span>':'')+'</span></div>';
+   const fs=medimagoState.sintomiProvenienza[ss.id];const off=!!(fs&&fs.has('offgame'));const draft=medimagoState.sintomiOffgameBozza.has(ss.id);const selected=off||draft;const alt=medimagoState.sintomiIndividuati.has(ss.id)&&!off;
+   h+='<div class="sym-row'+(selected?' checked':'')+'" data-id="'+ss.id+'"><input type="checkbox"'+(selected?' checked':'')+'><span class="class-badge class-'+c+'">'+c+'</span><span class="nm">'+esc(ss.n)+(draft?' <span class="muted">· da confermare</span>':(off?' <span class="muted">· noto OFFGame</span>':(alt?' <span class="muted">· già riconosciuto in Diagnosi</span>':'')))+'</span></div>';
  });
  listaInd.innerHTML=h||'<div class="muted" style="padding:12px 14px">Nessun Sintomo corrisponde alla ricerca.</div>';
  Array.prototype.forEach.call(listaInd.querySelectorAll('.sym-row'),function(row){onPress(row,function(ev){
    const box=row.querySelector('input');if(ev.target.tagName!=='INPUT'){box.checked=!box.checked;}const id=row.getAttribute('data-id'),s=SINTOMI_BY_ID[id];if(!s)return;
-   if(box.checked){medimagoState.classiDiagnosi.add(s.c);impostaFonteClasseSemplice(s.c,'offgame',true);impostaFonteSintomo(id,'offgame',true);row.classList.add('checked');}
-   else{impostaFonteSintomo(id,'offgame',false);row.classList.remove('checked');if(!classeHaSintomiFonte(s.c,'offgame')){impostaFonteClasseSemplice(s.c,'offgame',false);}}
-   syncClassCheck(s.c);markDiagRowsStale('Sintomi noti OFFGame modificati.');renderKnownSummary();renderStepRiepilogo();
+   if(box.checked){medimagoState.classiDiagnosi.add(s.c);if(!(medimagoState.sintomiProvenienza[id]&&medimagoState.sintomiProvenienza[id].has('offgame'))){medimagoState.sintomiOffgameBozza.add(id);}row.classList.add('checked');}
+   else{medimagoState.sintomiOffgameBozza.delete(id);if(medimagoState.sintomiProvenienza[id]&&medimagoState.sintomiProvenienza[id].has('offgame')){impostaFonteSintomo(id,'offgame',false);if(!classeHaSintomiFonte(s.c,'offgame')){impostaFonteClasseSemplice(s.c,'offgame',false);}}row.classList.remove('checked');}
+   syncClassCheck(s.c);markDiagRowsStale('Selezione dei Sintomi OFFGame modificata.');renderKnownSummary();renderStepRiepilogo();
  });});
 }
 
@@ -3010,17 +3023,27 @@ onPress(document.getElementById('diag-narrator-apply'),function(){
  const outRes=document.getElementById('diag-narrator-result');const sospesa=diagnosiInSospeso();
  if(sospesa){outRes.className='narrator-paste-result warn';outRes.textContent='Completa o correggi prima il tiro di Diagnosi attualmente in sospeso; poi potrai aggiungere i Sintomi OFFGame.';return;}
  const res=analizzaSintomiNarratore(document.getElementById('diag-narrator-paste').value);
- res.matches.forEach(function(x){const c=x.s.c;medimagoState.classiDiagnosi.add(c);impostaFonteClasseSemplice(c,'offgame',true);impostaFonteSintomo(x.s.id,'offgame',true);syncClassCheck(c);});
+ res.matches.forEach(function(x){const c=x.s.c;medimagoState.classiDiagnosi.add(c);if(!(medimagoState.sintomiProvenienza[x.s.id]&&medimagoState.sintomiProvenienza[x.s.id].has('offgame'))){medimagoState.sintomiOffgameBozza.add(x.s.id);}syncClassCheck(c);});
  outRes.innerHTML=htmlEsitoIncolla(res);outRes.className='narrator-paste-result '+(res.unmatched.length?'warn':'ok');
- if(res.matches.length){markDiagRowsStale('Sintomi OFFGame aggiunti.');searchInd.value='';renderLista();renderKnownSummary();renderStepRiepilogo();}
+ if(res.matches.length){markDiagRowsStale('Sintomi OFFGame preparati: confermali prima di saltare la Diagnosi.');searchInd.value='';renderLista();renderKnownSummary();renderStepRiepilogo();}
 });
 classInd.addEventListener('change',renderLista);searchInd.addEventListener('input',renderLista);renderLista();renderKnownSummary();
 medimagoState.refreshListaDiagnosi=function(){renderLista();renderKnownSummary();};
+onPress(document.getElementById('diag-offgame-confirm'),function(){
+ const ids=Array.from(medimagoState.sintomiOffgameBozza||[]);
+ const warnEl=document.getElementById('md_warn1');
+ if(!ids.length){if(warnEl){warnEl.textContent='Seleziona o incolla almeno un Sintomo da confermare come già noto OFFGame.';}return;}
+ const sospesa=diagnosiInSospeso();if(sospesa){if(warnEl){warnEl.textContent=validaDiagnosiInSospeso();}return;}
+ ids.forEach(function(id){const ss=SINTOMI_BY_ID[id];if(!ss)return;medimagoState.classiDiagnosi.add(ss.c);impostaFonteClasseSemplice(ss.c,'offgame',true);impostaFonteSintomo(id,'offgame',true);medimagoState.sintomiOffgameBozza.delete(id);syncClassCheck(ss.c);});
+ if(warnEl){warnEl.textContent='Sintomi confermati come già noti OFFGame. Le relative Classificazioni non richiedono il tiro di Diagnosi.';}
+ markDiagRowsStale('Sintomi OFFGame confermati.');renderLista();renderKnownSummary();renderStepRiepilogo();
+});
 
 Array.prototype.forEach.call(body.querySelectorAll('.diag-classe'),function(chk){chk.addEventListener('change',function(){
  const sospesa=diagnosiInSospeso();if(sospesa){chk.checked=medimagoState.classiDiagnosi.has(chk.value);const warnEl=document.getElementById('md_warn1');if(warnEl){warnEl.textContent=validaDiagnosiInSospeso();}return;}
  if(chk.checked){medimagoState.classiDiagnosi.add(chk.value);} else {
    medimagoState.classiDiagnosi.delete(chk.value);Array.from(fontiClasse(chk.value)).forEach(function(f){impostaFonteClasse(chk.value,f,false);});
+   SINTOMI.forEach(function(ss){if(ss.c===chk.value){medimagoState.sintomiOffgameBozza.delete(ss.id);}});
    const idsClasse=new Set();SINTOMI.forEach(function(ss){if(ss.c===chk.value){idsClasse.add(ss.id);}});
    const rimossi=rimuoviCureDaDiagnosiPerSintomi(idsClasse);const nota=document.getElementById('diag-prune-note');
    if(nota&&rimossi){nota.textContent='Hai rimosso la Classificazione '+chk.value+' dalla Diagnosi: '+rimossi+' tentativ'+(rimossi===1?'o':'i')+' aggiunt'+(rimossi===1?'o':'i')+' tramite il bulk diagnostico '+(rimossi===1?'è stato eliminato':'sono stati eliminati')+' e la relativa Fatica è stata restituita. Le cure aggiunte manualmente restano invariate.';}
@@ -3041,7 +3064,7 @@ onPress(document.getElementById('diag-genera'),function(){
  medimagoState.diagActionCounter += 1;const batch='diagbatch'+medimagoState.diagActionCounter;
  out.innerHTML=cs.map(function(c){
    const known=classeRiconosciuta(c);
-   if(known){return '<div class="panel" style="background:#fff"><h4><span class="class-badge class-'+c+'">'+c+'</span> Diagnosi</h4><div class="result-box ok"><b>Classificazione già nota.</b><br>È stata comunicata OFFGame o riconosciuta in precedenza: nessun tiro e nessun costo di Diagnosi.</div></div>';}
+   if(known){return '<div class="panel" style="background:#fff"><h4><span class="class-badge class-'+c+'">'+c+'</span> Diagnosi</h4><div class="result-box ok"><b>Classificazione già nota.</b><br>È stata confermata come nota OFFGame o riconosciuta in una Diagnosi precedente: nessun tiro e nessun costo di Diagnosi.</div></div>';}
    return '<div class="panel" style="background:#fff"><h4><span class="class-badge class-'+c+'">'+c+'</span> Diagnosi</h4><div class="diag-blocco-tiro" id="diag-blocco-'+c+'">'+guaritoreChooserRepeatable('diag-guaritore','classe',c)+
    '<div class="field"><label>Auto-diagnosi</label><label><input type="checkbox" class="diag-self" data-classe="'+c+'"> Applica -20% (arrotondato per difetto)</label></div>'+
    '<div class="effect-box" id="diag-effects-'+c+'"></div><div id="diag-effect-warn-'+c+'" class="step-warning"></div>'+
@@ -3364,9 +3387,17 @@ AVVIO
 
 /* Ponte verso il gestore Firebase. Converte Set ↔ Array senza salvare il Reparto Pazienti. */
 window.__medSessionBridge={
- collect:function(){function mapSets(o){var x={};Object.keys(o||{}).forEach(function(k){x[k]=Array.from(o[k]||[])});return x}return {guaritori:JSON.parse(JSON.stringify(medimagoState.guaritori||[])),coda:JSON.parse(JSON.stringify(medimagoState.coda||[])),causaNota:!!medimagoState.causaNota,classiDiagnosi:Array.from(medimagoState.classiDiagnosi||[]),classiRiconosciute:mapSets(medimagoState.classiRiconosciute||{}),sintomiIndividuati:Array.from(medimagoState.sintomiIndividuati||[]),sintomiProvenienza:mapSets(medimagoState.sintomiProvenienza||{}),diagActionCounter:Number(medimagoState.diagActionCounter)||0,guaritoreCounter:Number(guaritoreCounter)||0,medEffectCounter:Number(medEffectCounter)||0,currentStep:mdStepper&&mdStepper.getCurrent?mdStepper.getCurrent():0};},
- reset:function(){medimagoState.guaritori=[];medimagoState.coda=[];medimagoState.causaNota=false;medimagoState.classiDiagnosi=new Set();medimagoState.classiRiconosciute={};medimagoState.sintomiIndividuati=new Set();medimagoState.sintomiProvenienza={};medimagoState.diagActionCounter=0;medimagoState.refreshCuraEffects=null;medimagoState.refreshListaDiagnosi=null;guaritoreCounter=0;medEffectCounter=0;mdStepper=null;var w=document.getElementById('med-session-wizard');if(w)w.innerHTML='';},
- apply:function(s){function mapToSets(o){var x={};Object.keys(o||{}).forEach(function(k){x[k]=new Set(Array.isArray(o[k])?o[k]:[])});return x}this.reset();s=s||{};medimagoState.guaritori=Array.isArray(s.guaritori)?JSON.parse(JSON.stringify(s.guaritori)):[];medimagoState.guaritori.forEach(riallineaGuaritoreRegoleDadi);medimagoState.coda=Array.isArray(s.coda)?JSON.parse(JSON.stringify(s.coda)):[];medimagoState.causaNota=!!s.causaNota;medimagoState.classiDiagnosi=new Set(Array.isArray(s.classiDiagnosi)?s.classiDiagnosi:[]);medimagoState.classiRiconosciute=mapToSets(s.classiRiconosciute||{});medimagoState.sintomiIndividuati=new Set(Array.isArray(s.sintomiIndividuati)?s.sintomiIndividuati:[]);medimagoState.sintomiProvenienza=mapToSets(s.sintomiProvenienza||{});medimagoState.diagActionCounter=Math.max(0,Number(s.diagActionCounter)||0);guaritoreCounter=Math.max(0,Number(s.guaritoreCounter)||0);medEffectCounter=Math.max(0,Number(s.medEffectCounter)||0);buildMedimagoWizard(Math.max(0,Number(s.currentStep)||0));},
+ collect:function(){function mapSets(o){var x={};Object.keys(o||{}).forEach(function(k){x[k]=Array.from(o[k]||[])});return x}return {guaritori:JSON.parse(JSON.stringify(medimagoState.guaritori||[])),coda:JSON.parse(JSON.stringify(medimagoState.coda||[])),causaNota:!!medimagoState.causaNota,classiDiagnosi:Array.from(medimagoState.classiDiagnosi||[]),classiRiconosciute:mapSets(medimagoState.classiRiconosciute||{}),sintomiIndividuati:Array.from(medimagoState.sintomiIndividuati||[]),sintomiProvenienza:mapSets(medimagoState.sintomiProvenienza||{}),sintomiOffgameBozza:Array.from(medimagoState.sintomiOffgameBozza||[]),offgameExplicitConfirmation:true,diagActionCounter:Number(medimagoState.diagActionCounter)||0,guaritoreCounter:Number(guaritoreCounter)||0,medEffectCounter:Number(medEffectCounter)||0,currentStep:mdStepper&&mdStepper.getCurrent?mdStepper.getCurrent():0};},
+ reset:function(){medimagoState.guaritori=[];medimagoState.coda=[];medimagoState.causaNota=false;medimagoState.classiDiagnosi=new Set();medimagoState.classiRiconosciute={};medimagoState.sintomiIndividuati=new Set();medimagoState.sintomiProvenienza={};medimagoState.sintomiOffgameBozza=new Set();medimagoState.diagActionCounter=0;medimagoState.refreshCuraEffects=null;medimagoState.refreshListaDiagnosi=null;guaritoreCounter=0;medEffectCounter=0;mdStepper=null;var w=document.getElementById('med-session-wizard');if(w)w.innerHTML='';},
+ apply:function(s){function mapToSets(o){var x={};Object.keys(o||{}).forEach(function(k){x[k]=new Set(Array.isArray(o[k])?o[k]:[])});return x}this.reset();s=s||{};medimagoState.guaritori=Array.isArray(s.guaritori)?JSON.parse(JSON.stringify(s.guaritori)):[];medimagoState.guaritori.forEach(riallineaGuaritoreRegoleDadi);medimagoState.coda=Array.isArray(s.coda)?JSON.parse(JSON.stringify(s.coda)):[];medimagoState.causaNota=!!s.causaNota;medimagoState.classiDiagnosi=new Set(Array.isArray(s.classiDiagnosi)?s.classiDiagnosi:[]);medimagoState.classiRiconosciute=mapToSets(s.classiRiconosciute||{});medimagoState.sintomiIndividuati=new Set(Array.isArray(s.sintomiIndividuati)?s.sintomiIndividuati:[]);medimagoState.sintomiProvenienza=mapToSets(s.sintomiProvenienza||{});medimagoState.sintomiOffgameBozza=new Set(Array.isArray(s.sintomiOffgameBozza)?s.sintomiOffgameBozza:[]);
+/* v48: nelle sessioni create prima della conferma esplicita, la fonte OFFGame veniva
+   applicata già alla semplice selezione/incolla. Per non saltare Diagnosi senza consenso,
+   quelle vecchie fonti vengono trasformate in bozza e richiedono una conferma una tantum. */
+if(s.offgameExplicitConfirmation!==true){
+ Object.keys(medimagoState.sintomiProvenienza).forEach(function(sid){const fs=medimagoState.sintomiProvenienza[sid];if(!fs||!fs.has('offgame'))return;fs.delete('offgame');medimagoState.sintomiOffgameBozza.add(sid);if(!fs.size){delete medimagoState.sintomiProvenienza[sid];medimagoState.sintomiIndividuati.delete(sid);}});
+ Object.keys(medimagoState.classiRiconosciute).forEach(function(c){const fc=medimagoState.classiRiconosciute[c];if(!fc)return;fc.delete('offgame');if(!fc.size){delete medimagoState.classiRiconosciute[c];}});
+}
+medimagoState.diagActionCounter=Math.max(0,Number(s.diagActionCounter)||0);guaritoreCounter=Math.max(0,Number(s.guaritoreCounter)||0);medEffectCounter=Math.max(0,Number(s.medEffectCounter)||0);buildMedimagoWizard(Math.max(0,Number(s.currentStep)||0));},
  newBlank:function(){this.reset();buildMedimagoWizard(0);},
  phaseLabel:function(i){return ['Guaritori','Diagnosi','Terapia e Chirurgia','Riepilogo'][Math.max(0,Math.min(3,Number(i)||0))]}
 };
