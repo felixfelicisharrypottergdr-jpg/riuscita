@@ -4,6 +4,7 @@
 
 
 <!DOCTYPE html>
+<!-- v39: moduli Riuscita e Forza chiusi all’apertura, selettore superiore coordinato agli altri tool -->
 <!-- v38: Riuscita e Forza separate in due moduli collegati ma utilizzabili indipendentemente -->
 <!-- v31: riepilogo medimagico sempre visibile per Incantesimi che causano perdita di Salute -->
 <html lang="it">
@@ -1439,6 +1440,78 @@
   }
 </style>
 
+
+<style id="v39-module-switcher">
+  /* v39 — selettore superiore in stile navigazione degli altri tool. */
+  .tool-module-switcher{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin:0 0 18px;
+    padding:8px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    background:rgba(255,251,238,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  .tool-module-switch-btn{
+    min-width:0;
+    min-height:62px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:13px 16px;
+    border:1px solid transparent;
+    border-radius:9px;
+    background:transparent;
+    color:#6b5638;
+    font-family:Georgia,'Times New Roman',serif;
+    font-size:16px;
+    font-weight:700;
+    line-height:1.2;
+    text-align:center;
+    cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s,transform .1s;
+  }
+  .tool-module-switch-btn i{
+    flex:0 0 auto;
+    font-size:18px;
+    color:var(--maroon);
+  }
+  .tool-module-switch-btn:hover{
+    border-color:rgba(137,44,15,.42);
+    background:rgba(137,44,15,.06);
+    color:var(--maroon-deep);
+  }
+  .tool-module-switch-btn.is-active{
+    background:var(--maroon);
+    border-color:var(--maroon-deep);
+    color:#fff8e8;
+  }
+  .tool-module-switch-btn.is-active i{color:#fff8e8;}
+  .tool-module-switch-btn:active{transform:translateY(1px);}
+
+  /* Le vecchie summary restano nel markup per semantica/fallback, ma la navigazione visibile è quella superiore. */
+  .tool-module > summary{display:none;}
+  .tool-module:not([open]){
+    margin:0;
+    border:0;
+    background:transparent;
+  }
+  .tool-module[open]{
+    margin:0 0 18px;
+    border:1.5px solid var(--line);
+    border-radius:11px;
+    background:rgba(255,251,238,.32);
+  }
+
+  @media(max-width:640px){
+    .tool-module-switcher{grid-template-columns:1fr;}
+    .tool-module-switch-btn{min-height:52px;padding:11px 12px;font-size:15px;}
+  }
+</style>
+
 </head>
 <body>
 <div class="wrap">
@@ -1457,7 +1530,19 @@
   </div>
 
 
-  <details class="tool-module" id="successModule" open>
+
+  <div class="tool-module-switcher" role="group" aria-label="Sezioni del tool">
+    <button type="button" class="tool-module-switch-btn" data-module-target="successModule" aria-controls="successModule" aria-expanded="false">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+      <span>Riuscita della Conoscenza</span>
+    </button>
+    <button type="button" class="tool-module-switch-btn" data-module-target="forceModule" aria-controls="forceModule" aria-expanded="false">
+      <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+      <span>Forza e conseguenze</span>
+    </button>
+  </div>
+
+  <details class="tool-module" id="successModule">
     <summary><span class="tool-module-num">1</span><span>Riuscita della Conoscenza</span></summary>
     <div class="tool-module-body">
 
@@ -4883,6 +4968,51 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   if(text)text.textContent='Il tool di provenienza resta separato: puoi riaprirlo in un’altra pagina senza sostituire Riuscita delle Conoscenze.';
   card.classList.remove('hidden');
   try{ if(typeof sendHeightSoon==='function')sendHeightSoon(); }catch(e){}
+})();
+</script>
+
+<script id="v39-module-switcher-js">
+(function(){
+  'use strict';
+  var modules=[document.getElementById('successModule'),document.getElementById('forceModule')].filter(Boolean);
+  var buttons=Array.prototype.slice.call(document.querySelectorAll('.tool-module-switch-btn[data-module-target]'));
+
+  function syncModuleSwitcher(){
+    buttons.forEach(function(btn){
+      var target=document.getElementById(btn.getAttribute('data-module-target'));
+      var active=!!(target&&target.open);
+      btn.classList.toggle('is-active',active);
+      btn.setAttribute('aria-expanded',active?'true':'false');
+    });
+  }
+
+  function closeOtherModules(activeModule){
+    modules.forEach(function(module){
+      if(module!==activeModule&&module.open)module.open=false;
+    });
+  }
+
+  buttons.forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var target=document.getElementById(btn.getAttribute('data-module-target'));
+      if(!target)return;
+      var shouldOpen=!target.open;
+      modules.forEach(function(module){module.open=false;});
+      if(shouldOpen)target.open=true;
+      syncModuleSwitcher();
+    });
+  });
+
+  modules.forEach(function(module){
+    module.addEventListener('toggle',function(){
+      if(module.open)closeOtherModules(module);
+      syncModuleSwitcher();
+    });
+  });
+
+  /* Ogni nuovo accesso al tool parte con entrambe le sezioni richiuse. */
+  modules.forEach(function(module){module.open=false;});
+  syncModuleSwitcher();
 })();
 </script>
 
