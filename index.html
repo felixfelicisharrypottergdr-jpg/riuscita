@@ -4,6 +4,8 @@
 
 
 <!DOCTYPE html>
+<!-- v44: riepilogo multi-bersaglio su righe separate con punto elenco -->
+<!-- v43: bersagli multipli a schede: viene mostrato un solo bersaglio alla volta -->
 <!-- v42: isolamento bersagli rinforzato: nessun autofill/clonazione dei campi tra bersagli -->
 <!-- v41: bersagli multipli isolati + riepilogo post-utilizzo distinto per ciascun bersaglio -->
 <!-- v40: scheda Conoscenza nella Forza coordinata alla Riuscita + riepilogo con bonus/malus post-utilizzo -->
@@ -1304,6 +1306,14 @@
   }
   .force-target-count-btn:hover{border-color:var(--maroon);}
   .force-target-count-btn.active{background:var(--maroon);border-color:var(--maroon-deep);color:#fff8e8;}
+  .force-target-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px;padding-top:10px;border-top:1px dashed rgba(184,154,90,.72);}
+  .force-target-tabs.hidden{display:none!important;}
+  .force-target-tab{
+    min-height:34px;padding:6px 11px;border:1px solid var(--line);border-radius:6px;
+    background:#fffaf0;color:var(--maroon-deep);font-family:Georgia,'Times New Roman',serif;font-size:12.5px;font-weight:700;cursor:pointer;
+  }
+  .force-target-tab:hover{border-color:var(--maroon);background:#f5ead0;}
+  .force-target-tab.active{background:var(--maroon);border-color:var(--maroon-deep);color:#fff8e8;}
   .force-target-list{display:grid;gap:10px;margin-top:12px;}
   .force-target-card{border:1px solid var(--line);border-radius:8px;background:#fffaf0;padding:11px 12px;}
   .force-target-card.is-missed{opacity:.70;background:rgba(233,217,172,.38);}
@@ -1838,6 +1848,7 @@
               </div>
             </div>
             <div class="force-target-count-buttons" id="forceTargetCountButtons"></div>
+            <div class="force-target-tabs hidden" id="forceTargetTabs" aria-label="Bersaglio da compilare"></div>
             <div class="force-ardor-budget hidden" id="forceArdorBudget"></div>
             <div class="force-patient-notice hidden" id="forceMultiPatientNotice"><strong>Un paziente alla volta.</strong> Il tool di Medimagia gestisce una sola cartella clinica per volta. Se hai colpito più bersagli, importa e completa un paziente prima di passare al successivo: non esportare tutti i bersagli insieme.</div>
             <div class="force-target-list" id="forceTargetList"></div>
@@ -2016,7 +2027,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     scolastica:'Scolastica', extra:'Extra', avanzata:'Avanzata'
   };
 
-  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null, extraRollResults:{}, forceTargets:{signature:'',count:1,items:[]} };
+  var state = { tipologia:null, pg:null, sapienzaExtra:null, selectedEntry:null, lastPct:null, extraRollResults:{}, forceTargets:{signature:'',count:1,active:0,items:[]} };
 
   function qs(id){ return document.getElementById(id); }
   function escapeHtml(value){
@@ -4216,13 +4227,14 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   function forceTargetStateEnsure(maxTargets){
-    if(!state.forceTargets)state.forceTargets={signature:'',count:1,items:[]};
+    if(!state.forceTargets)state.forceTargets={signature:'',count:1,active:0,items:[]};
     var entryName=cleanKnowledgeName(state.selectedEntry&&state.selectedEntry.name||'');
     var sig=[entryName,state.pg||'',state.lastPct===null?'':state.lastPct,forceCurrentHasAffineSapienza()?'sap':'nosap',maxTargets].join('|');
     if(state.forceTargets.signature!==sig){
-      state.forceTargets={signature:sig,count:1,items:[]};
+      state.forceTargets={signature:sig,count:1,active:0,items:[]};
     }
     state.forceTargets.count=Math.max(1,Math.min(maxTargets,Number(state.forceTargets.count)||1));
+    state.forceTargets.active=Math.max(0,Math.min(state.forceTargets.count-1,Number(state.forceTargets.active)||0));
     while(state.forceTargets.items.length<state.forceTargets.count){
       state.forceTargets.items.push(forceBlankTargetItem());
     }
@@ -4271,13 +4283,20 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var buttons='';
     for(var i=1;i<=maxTargets;i++)buttons+='<button type="button" class="force-target-count-btn'+(i===ft.count?' active':'')+'" data-force-target-count="'+i+'">'+i+'</button>';
     qs('forceTargetCountButtons').innerHTML=buttons;
+    var tabsWrap=qs('forceTargetTabs');
+    if(tabsWrap){
+      var tabs='';
+      for(var ti=0;ti<ft.count;ti++)tabs+='<button type="button" class="force-target-tab'+(ti===ft.active?' active':'')+'" data-force-target-tab="'+ti+'">Bersaglio '+(ti+1)+'</button>';
+      tabsWrap.innerHTML=tabs;
+      tabsWrap.classList.toggle('hidden',ft.count<=1);
+    }
     var targetList=qs('forceTargetList');
-    var structureKey=ft.signature+'|'+ft.count+'|'+(ardor?'ardor':'standard');
+    var structureKey=ft.signature+'|'+ft.count+'|'+ft.active+'|'+(ardor?'ardor':'standard');
     if(targetList.dataset.structureKey!==structureKey){
       var list='';
       for(var j=0;j<ft.count;j++){
         var it=ft.items[j], label=forceTargetLabel(it,j), missed=!ardor && it.hit==='miss';
-        list+='<div class="force-target-card'+(missed?' is-missed':'')+'" data-force-target-index="'+j+'">'+
+        list+='<div class="force-target-card'+(missed?' is-missed':'')+(j===ft.active?'':' hidden')+'" data-force-target-index="'+j+'">'+
           '<div class="force-target-card-head"><div class="force-target-card-title">'+escapeHtml(label)+'</div><div class="force-target-card-status">'+(ardor?'gestione proiettili':'esito individuale')+'</div></div>'+
           '<div class="force-target-fields">'+
             '<div class="force-field full"><label>Nome del bersaglio <span class="force-status-tag">facoltativo</span></label><input type="text" data-ft-field="name" autocomplete="off" data-form-type="other" data-lpignore="true" value="'+escapeHtml(it.name||'')+'" placeholder="Es. Harry Potter"></div>'+
@@ -4349,17 +4368,29 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function forceBindMultiTargetManager(){
     var manager=qs('forceMultiTargetManager'); if(!manager)return;
     manager.addEventListener('click',function(ev){
+      var tab=ev.target.closest&&ev.target.closest('[data-force-target-tab]');
+      if(tab){
+        if(!state.forceTargets)return;
+        state.forceTargets.active=Math.max(0,Math.min(state.forceTargets.count-1,Number(tab.getAttribute('data-force-target-tab'))||0));
+        refreshForceCard(); refreshModifierSummary();
+        return;
+      }
       var b=ev.target.closest&&ev.target.closest('[data-force-target-count]'); if(!b)return;
       var oldCount=Math.max(1,Number(state.forceTargets&&state.forceTargets.count)||1);
       var newCount=Math.max(1,Number(b.getAttribute('data-force-target-count'))||1);
-      if(!state.forceTargets)state.forceTargets={signature:'',count:1,items:[]};
+      if(!state.forceTargets)state.forceTargets={signature:'',count:1,active:0,items:[]};
       state.forceTargets.count=newCount;
       /* v42 — ogni nuovo slot viene ricreato da zero, senza copiare né il record
          né i valori DOM del bersaglio precedente. */
       if(newCount>oldCount){
         for(var ni=oldCount;ni<newCount;ni++){state.forceTargets.items[ni]=forceBlankTargetItem();}
+        /* v43 — aumentando il numero, porta subito al nuovo bersaglio: 2 mostra soltanto il 2, 3 soltanto il 3, ecc. */
+        state.forceTargets.active=newCount-1;
       }else if(newCount<oldCount){
         state.forceTargets.items=state.forceTargets.items.slice(0,newCount);
+        state.forceTargets.active=Math.min(Number(state.forceTargets.active)||0,newCount-1);
+      }else{
+        state.forceTargets.active=Math.min(Number(state.forceTargets.active)||0,newCount-1);
       }
       refreshForceCard(); refreshModifierSummary();
     });
@@ -4423,7 +4454,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       box.innerHTML='<div class="force-target-title">Effetto su '+escapeHtml(label)+(ardor&&hitCount>1?' · '+hitCount+' proiettili a segno':'')+'</div>'+effect.html+med.html;
       htmlCopy.push(label+': '+effect.copy+(med.copy?' · '+med.copy:''));
     }
-    var dmgBox=qs('forceDamageBox'); if(dmgBox)dmgBox.dataset.copyText=htmlCopy.join(' | ');
+    var dmgBox=qs('forceDamageBox'); if(dmgBox)dmgBox.dataset.copyText=htmlCopy.length>1?('\n• '+htmlCopy.join('\n• ')):htmlCopy.join('');
   }
 
   function refreshForceCard(){
@@ -4768,7 +4799,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       }
       var targetEffectBox=qs('forceDamageBox');
       if(targetEffectBox && !targetEffectBox.classList.contains('hidden') && targetEffectBox.dataset.copyText){
-        items.push({kind:'target',label:'Effetto sul bersaglio',text:targetEffectBox.dataset.copyText});
+        var targetCopyText=targetEffectBox.dataset.copyText;
+        items.push({kind:'target',label:/^\n• /.test(targetCopyText)?'Effetti sui bersagli':'Effetto sul bersaglio',text:targetCopyText});
       }
       var afterUse = modifierContextualAfterUseEffects(state.selectedEntry);
       var affectedTargetLabels = modifierAffectedTargetLabels();
