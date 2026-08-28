@@ -1,4 +1,6 @@
 
+<!-- Revisione v61: Fianto Duri usa direttamente la Forza aggiuntiva prevista dalle Specifiche; Potenza/Fatica/Sapienza non ricalcolano il bonus, mentre gli eventuali modificatori percentuali esterni restano successivi. -->
+
 <!-- Revisione v52: Sintomi materiali risolti anche per tipo di danno; dadi dei bonus personali copiabili con inserimento immediato dell’esito. -->
 <!-- Revisione v53: Piante/Creature con più tipi di danno permettono di scegliere la causa medimagica corretta; la scelta pilota Sintomi e San Mungo. -->
 <!-- Revisione v51: corretto il bridge fra il motore medimagico e i moduli Piante/Creature/Pozioni; ora %, Sintomi e import San Mungo vengono realmente renderizzati. -->
@@ -9,6 +11,8 @@
 
 
 
+<!-- Revisione v62: audit Forza Varia; valori da Specifiche automatici, niente doppio fattore di riuscita per gli Elementali a Forza graduata; Fianto Duri invariato come bonus diretto. -->
+<!-- Revisione v63: ricerca da tastiera più tollerante; Invio riconosce i nomi anche senza marcatori +, * e ✔. -->
 <!DOCTYPE html>
 <!-- v48: Piante/Creature complete e azzerabili; Parametri intaccati automatici; Pozioni da frase Bagaglio; rimosso collegamento Elfo -->
 <!-- v47: pannelli materiali semplificati, bonus esterni a catalogo e danno Piante automatico -->
@@ -1919,7 +1923,7 @@
     <div class="force-inline-note hidden" id="forceSpecialNote"></div>
 
     <div id="forceCalculatorWrap">
-      <div class="force-input-grid">
+      <div class="force-input-grid" id="forceCasterInputGrid">
         <div class="force-field">
           <label for="forceParamValue" id="forceParamLabel">Valore del Parametro affine</label>
           <input type="number" id="forceParamValue" min="0" step="0.5" inputmode="decimal" placeholder="Es. 13">
@@ -2905,8 +2909,17 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   }
 
   function findConoscenza(name){
+    var raw=String(name||'').trim();
     for (var i=0;i<CONOSCENZE_DB.length;i++){
-      if (CONOSCENZE_DB[i].name === name){ return CONOSCENZE_DB[i]; }
+      if (CONOSCENZE_DB[i].name === raw){ return CONOSCENZE_DB[i]; }
+    }
+    /* v63 — Invio deve riconoscere anche il nome mostrato senza marcatori
+       grafici/regolamentari (+, *, ✔), esattamente come fanno i suggerimenti. */
+    var wanted=normalizeSearchText(raw.replace(/[✔+*]+/g,' '));
+    if(!wanted)return null;
+    for (var j=0;j<CONOSCENZE_DB.length;j++){
+      var candidate=normalizeSearchText(String(CONOSCENZE_DB[j].name||'').replace(/[✔+*]+/g,' '));
+      if(candidate===wanted){ return CONOSCENZE_DB[j]; }
     }
     return null;
   }
@@ -4136,6 +4149,96 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return low==='varia' || (meta.baseForce===null && /\d/.test(low));
   }
 
+  /* v62 — gestione esplicita delle Conoscenze con Forza «Varia».
+     Due casi diversi:
+     1) alcune Specifiche indicano una Forza BASE diversa per il tipo di PG: la
+        riuscita continua a ridurla normalmente;
+     2) gli Elementali graduati indicano già una Forza diversa per 100/66/33%:
+        quella fascia incorpora la riuscita e non va moltiplicata una seconda volta.
+     Fianto Duri resta un terzo caso: il valore è direttamente la Forza da aggiungere
+     allo scudo e non viene ricalcolato con Parametro/Fatica/Sapienza. */
+  var FORCE_VARIABLE_RULES={
+    'elettro':{mode:'outcome',label:'Forza delle scosse',values:{'studente':{100:80,66:70,33:60},'adulto-senza':{100:90},'adulto-con':{100:100}}},
+    'elettro maxima':{mode:'outcome',label:'Forza delle scosse',values:{'studente':{100:90,66:80,33:70},'adulto-senza':{100:120,66:110,33:100},'adulto-con':{100:130}}},
+    'glacius':{mode:'outcome',label:'Forza del getto gelido',values:{'studente':{100:80,66:70,33:60},'adulto-senza':{100:90},'adulto-con':{100:100}}},
+    'glacius maxima':{mode:'outcome',label:'Forza del raggio di ghiaccio',values:{'studente':{100:90,66:80,33:70},'adulto-senza':{100:120,66:110,33:100},'adulto-con':{100:130}}},
+    'incendio':{mode:'outcome',label:'Forza del getto di fuoco',values:{'studente':{100:80,66:70,33:60},'adulto-senza':{100:90},'adulto-con':{100:100}}},
+    'ventus':{mode:'outcome',label:'Forza delle folate',values:{'studente':{100:80,66:70,33:60},'adulto-senza':{100:110,66:100,33:90},'adulto-con':{100:120}}},
+
+    'homenum revelio':{mode:'base',label:'Forza dell’Incantesimo',values:{'studente':100,'adulto-senza':120,'adulto-con':140}},
+    'incarceramus':{mode:'base',label:'Forza delle corde',values:{'studente':60,'adulto-senza':90,'adulto-con':120}},
+    'incarcifors':{mode:'base',label:'Forza della gabbia',values:{'studente':80,'adulto-senza':100,'adulto-con':120}},
+    'iterum post me':{mode:'base',label:'Forza dell’Incantesimo',values:{'studente':80,'adulto-senza':100,'adulto-con':120}},
+    'protego':{mode:'base',label:'Forza dello scudo',values:{'studente':100,'adulto-senza':110,'adulto-con':120}},
+    'protego horribilis':{mode:'base',label:'Forza dello scudo',values:{'studente':80,'adulto-senza':100,'adulto-con':120}},
+    'protego maxima':{mode:'base',label:'Forza della cupola',values:{'studente':100,'adulto-senza':125,'adulto-con':150}},
+    'protego totalum':{mode:'base',label:'Forza dello scudo',values:{'studente':90,'adulto-senza':120,'adulto-con':160}},
+    'protego volantis':{mode:'base',label:'Forza dello scudo',values:{'studente':90,'adulto-senza':120,'adulto-con':150}},
+    'repello inimicum':{mode:'base',label:'Forza dello scudo — uso singolo',values:{'studente':90,'adulto-senza':120,'adulto-con':150}},
+    'revelio':{mode:'base',label:'Forza dell’Incantesimo',values:{'studente':90,'adulto-senza':110,'adulto-con':130}}
+  };
+
+  function forceVariableSpecific(entry,pct){
+    var name=cleanKnowledgeName(entry&&entry.name||'').toLowerCase();
+    var rule=FORCE_VARIABLE_RULES[name];
+    if(!rule)return null;
+    var audience=state.pg==='studente'?'studente':(state.pg==='adulto'?(forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza'):'');
+    if(!audience)return {rule:rule,base:null,audience:'',missing:true,successEmbedded:rule.mode==='outcome'};
+    if(Number(pct)===0)return {rule:rule,base:0,audience:audience,successEmbedded:rule.mode==='outcome',sourcePct:0};
+    if(rule.mode==='outcome'){
+      if(pct===null||pct===undefined)return {rule:rule,base:null,audience:audience,missing:true,successEmbedded:true};
+      var bucket=rule.values[audience]||{};
+      var v=bucket[Number(pct)];
+      return {rule:rule,base:Number.isFinite(Number(v))?Number(v):null,audience:audience,missingRule:!Number.isFinite(Number(v)),successEmbedded:true,sourcePct:Number(pct)};
+    }
+    var base=(rule.values||{})[audience];
+    return {rule:rule,base:Number.isFinite(Number(base))?Number(base):null,audience:audience,missingRule:!Number.isFinite(Number(base)),successEmbedded:false};
+  }
+
+  function forceFixedTargetEffect(entry){
+    var name=cleanKnowledgeName(entry&&entry.name||'').toLowerCase();
+    if(name==='incarcifors'){
+      return {
+        html:'<div class="force-target-effects"><div class="force-target-effect"><b>Potenza → 0</b></div></div><div class="note">La Potenza resta a 0 finché il bersaglio si trova all’interno della gabbia, come indicato nelle Specifiche. Non dipende dalla Resistenza del bersaglio.</div>',
+        copy:'Potenza → 0 finché il bersaglio resta nella gabbia'
+      };
+    }
+    return null;
+  }
+
+  /* v61 — alcune Specifiche non forniscono una Forza base da ricalcolare,
+     ma un valore finale da applicare direttamente. Fianto Duri è il caso
+     esplicito: il valore indicato è la Forza DA AGGIUNGERE a uno scudo
+     già evocato. Potenza, Fatica e Sapienza non lo trasformano una seconda volta. */
+  function forceDirectSpecificKind(entry){
+    var name=cleanKnowledgeName(entry&&entry.name||'').toLowerCase();
+    return name==='fianto duri'?'fianto-duri':'';
+  }
+
+  function forceDirectSpecificValue(entry,pct){
+    var kind=forceDirectSpecificKind(entry);
+    if(!kind)return null;
+    if(Number(pct)===0)return {kind:kind,value:0,label:'Forza aggiunta allo scudo',source:'+0 Forza'};
+    if(!state.pg || pct===null || pct===undefined)return {kind:kind,value:null,label:'Forza aggiunta allo scudo',missing:true};
+
+    var wanted=state.pg==='studente'?'studente':(forceCurrentHasAffineSapienza()?'adulto-con':'adulto-senza');
+    var blocks=extractAudienceRuleBlocks(entry);
+    for(var b=0;b<blocks.length;b++){
+      var block=blocks[b];
+      if(block.key!==wanted)continue;
+      if(!/forza\s+in\s+aggiunta\s+agli\s+scudi/i.test(String(block.heading||'')))continue;
+      for(var r=0;r<block.outcomes.length;r++){
+        var row=block.outcomes[r];
+        if(!forcePctLineMatches(String(row.pct||'')+'%',pct))continue;
+        var m=String(row.value||'').replace(/,/g,'.').match(/([+-]?\s*\d+(?:\.\d+)?)\s*Forza\b/i);
+        if(!m)continue;
+        var n=Number(m[1].replace(/\s+/g,''));
+        if(Number.isFinite(n))return {kind:kind,value:n,label:'Forza aggiunta allo scudo',source:row.value,block:block,row:row};
+      }
+    }
+    return {kind:kind,value:null,label:'Forza aggiunta allo scudo',missingRule:true};
+  }
+
   function forceStripHtml(raw){
     var box=document.createElement('div'); box.innerHTML=String(raw||'');
     return cleanText(box.textContent||box.innerText||'');
@@ -4551,16 +4654,18 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
   function forceRenderMultiTargetManager(maxTargets){
     var manager=qs('forceMultiTargetManager'), singleR=qs('forceSingleResistanceField'), singleH=qs('forceSingleHealthField'), singleWrap=qs('forceSingleTargetFields');
     if(!manager)return false;
-    var multi=maxTargets>1;
+    var multi=maxTargets>1, fixedEffect=forceFixedTargetEffect(state.selectedEntry);
     manager.classList.toggle('hidden',!multi);
-    if(singleWrap)singleWrap.classList.toggle('hidden',multi);
-    if(singleR)singleR.classList.toggle('hidden',multi);
-    if(singleH)singleH.classList.toggle('hidden',multi);
+    if(singleWrap)singleWrap.classList.toggle('hidden',multi||!!fixedEffect);
+    if(singleR)singleR.classList.toggle('hidden',multi||!!fixedEffect);
+    if(singleH)singleH.classList.toggle('hidden',multi||!!fixedEffect);
     var patientNotice=qs('forceMultiPatientNotice');
     if(!multi){if(patientNotice)patientNotice.classList.add('hidden');return false;}
     var ft=forceTargetStateEnsure(maxTargets), ardor=forceIsArdorConvergence(maxTargets);
     qs('forceMultiTargetTitle').textContent='Bersagli dell’azione · massimo '+maxTargets;
-    qs('forceMultiTargetNote').innerHTML='<strong>Quanti bersagli prendi effettivamente di mira?</strong> Seleziona un numero qui sotto. Ogni bersaglio ha Resistenza, Salute ed esito propri; soltanto quelli colpiti producono danni e Sintomi esportabili.'+(ardor?' <strong>Ardor con Sapienza Offensiva 25:</strong> puoi distribuire fino a '+maxTargets+' proiettili tra i bersagli e indicare quanti vanno effettivamente a segno.':'');
+    qs('forceMultiTargetNote').innerHTML=fixedEffect
+      ? '<strong>Quanti bersagli prendi effettivamente di mira?</strong> Seleziona un numero qui sotto. Per questa Conoscenza l’effetto sul Parametro è fisso dalle Specifiche, quindi non servono Resistenza o Salute.'
+      : '<strong>Quanti bersagli prendi effettivamente di mira?</strong> Seleziona un numero qui sotto. Ogni bersaglio ha Resistenza, Salute ed esito propri; soltanto quelli colpiti producono danni e Sintomi esportabili.'+(ardor?' <strong>Ardor con Sapienza Offensiva 25:</strong> puoi distribuire fino a '+maxTargets+' proiettili tra i bersagli e indicare quanti vanno effettivamente a segno.':'');
     var buttons='';
     for(var i=1;i<=maxTargets;i++)buttons+='<button type="button" class="force-target-count-btn'+(i===ft.count?' active':'')+'" data-force-target-count="'+i+'">'+i+'</button>';
     qs('forceTargetCountButtons').innerHTML=buttons;
@@ -4584,8 +4689,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
             (ardor
               ? '<div class="force-field"><label>Proiettili indirizzati</label><input type="number" data-ft-field="projectiles" autocomplete="off" data-form-type="other" data-lpignore="true" min="1" max="'+maxTargets+'" step="1" value="'+Math.max(1,Number(it.projectiles)||1)+'"></div><div class="force-field"><label>Proiettili andati a segno</label><input type="number" data-ft-field="hits" autocomplete="off" data-form-type="other" data-lpignore="true" min="0" max="'+Math.max(1,Number(it.projectiles)||1)+'" step="1" value="'+Math.max(0,Number(it.hits)||0)+'"></div>'
               : '<div class="force-field full"><label>Esito sul bersaglio</label><select data-ft-field="hit" autocomplete="off" data-form-type="other"><option value="hit"'+(it.hit!=='miss'?' selected':'')+'>Colpito</option><option value="miss"'+(it.hit==='miss'?' selected':'')+'>Non colpito / si difende</option></select></div>')+
-            '<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" autocomplete="off" data-form-type="other" data-lpignore="true" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
-            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" autocomplete="off" data-form-type="other" data-lpignore="true" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'+
+            (fixedEffect?'':('<div class="force-field"><label>Resistenza</label><input type="number" data-ft-field="resistance" autocomplete="off" data-form-type="other" data-lpignore="true" min="0.1" step="0.5" inputmode="decimal" value="'+escapeHtml(it.resistance||'')+'" placeholder="Es. 15"></div>'+
+            '<div class="force-field"><label>Salute totale <span class="force-status-tag">per Sintomi</span></label><input type="number" data-ft-field="health" autocomplete="off" data-form-type="other" data-lpignore="true" min="1" step="1" inputmode="numeric" value="'+escapeHtml(it.health||'')+'" placeholder="Es. 75"></div>'))+
           '</div><div class="force-target-result" data-ft-result="'+j+'"></div></div>';
       }
       targetList.innerHTML=list;
@@ -4679,7 +4784,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     manager.addEventListener('change',function(ev){forceSyncTargetStateFromDom(ev.target);refreshForceCard();refreshModifierSummary();});
   }
 
-  function forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell){
+  function forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell,fixedTargetEffect){
     var ft=state.forceTargets, ardor=forceIsArdorConvergence(maxTargets), totalAssigned=0, htmlCopy=[];
     if(!ft)return;
 
@@ -4717,6 +4822,12 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
         box.className='force-target-result missed';
         box.innerHTML='<div class="force-target-result-empty"><strong>'+escapeHtml(label)+':</strong> nessun colpo va a segno. Nessun danno o Sintomo da esportare.</div>';
         htmlCopy.push(label+': non colpito');
+        continue;
+      }
+      if(fixedTargetEffect){
+        box.className='force-target-result';
+        box.innerHTML='<div class="force-target-title">Effetto su '+escapeHtml(label)+'</div>'+fixedTargetEffect.html;
+        htmlCopy.push(label+': '+(fixedTargetEffect.copy||''));
         continue;
       }
       var resistance=Number(item.resistance);
@@ -4757,8 +4868,18 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     qs('forceParamLabel').textContent=(meta.parameter && meta.parameter!=='//') ? ('Valore del PG — '+meta.parameter) : 'Valore del Parametro affine';
 
     var note=qs('forceSpecialNote'), calc=qs('forceCalculatorWrap'), manualWrap=qs('forceManualBaseWrap');
+    var casterGrid=qs('forceCasterInputGrid'), targetDetails=qs('forceTargetDetails');
+    var paramField=qs('forceParamValue')&&qs('forceParamValue').closest('.force-field');
+    var fatMaxField=qs('forceFatigueMax')&&qs('forceFatigueMax').closest('.force-field');
+    var fatCurField=qs('forceFatigueCurrent')&&qs('forceFatigueCurrent').closest('.force-field');
+    var sapField=qs('forceSapienzaTotal')&&qs('forceSapienzaTotal').closest('.force-field');
+    var resultMainLabel=qs('forceResultPanel')&&qs('forceResultPanel').querySelector('.force-result-main span');
     note.className='force-inline-note hidden'; note.innerHTML='';
     calc.className=''; manualWrap.className='force-field hidden';
+    if(casterGrid)casterGrid.classList.remove('hidden');
+    [paramField,fatMaxField,fatCurField,sapField].forEach(function(el){if(el)el.classList.remove('hidden');});
+    if(targetDetails)targetDetails.classList.remove('hidden');
+    if(resultMainLabel)resultMainLabel.textContent='Forza complessiva';
     qs('forceAdvancedLevelWrap').className=(state.tipologia==='avanzata')?'force-field':'force-field hidden';
 
     if(isDiv){
@@ -4784,13 +4905,77 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       sendHeightSoon();
       return;
     }
-    if(meta.baseForce===null){
-      manualWrap.className='force-field';
-      note.className='force-inline-note is-warning';
-      note.innerHTML='<strong>Forza variabile.</strong> Questa Conoscenza indica «'+escapeHtml(meta.forceRaw)+'». Leggi nelle Specifiche quale Forza base si applica al tuo caso e inseriscila nel campo dedicato; il resto del calcolo sarà automatico.';
+
+    var directSpecific=forceDirectSpecificValue(state.selectedEntry,pct);
+    if(directSpecific){
+      if(casterGrid)casterGrid.classList.remove('hidden');
+      if(paramField)paramField.classList.add('hidden');
+      if(fatMaxField)fatMaxField.classList.add('hidden');
+      if(fatCurField)fatCurField.classList.add('hidden');
+      if(sapField)sapField.classList.toggle('hidden',state.pg!=='adulto');
+      qs('forceAdvancedLevelWrap').className='force-field hidden';
+      if(targetDetails)targetDetails.classList.add('hidden');
+      manualWrap.className='force-field hidden';
+      note.className='force-inline-note';
+      note.innerHTML='<strong>Forza fissata dalle Specifiche.</strong> Per Fianto Duri il valore indicato è già la <strong>Forza da aggiungere allo scudo</strong>. Il tipo di PG e la presenza della Sapienza servono a scegliere la riga corretta delle Specifiche; una volta ottenuto quel valore, <strong>Potenza, Fatica e Sapienza non lo ricalcolano ulteriormente</strong>. Gli eventuali modificatori percentuali di Forza selezionati nel tool si applicano dopo questo valore.';
+      if(resultMainLabel)resultMainLabel.textContent=directSpecific.label||'Forza effettiva';
+      var emptyDirect=qs('forceResultEmpty'), bodyDirect=qs('forceResultBody');
+      if(!state.pg || pct===null || pct===undefined){
+        bodyDirect.className='hidden'; emptyDirect.className='force-result-empty';
+        emptyDirect.textContent='Completa: Tipo PG e riuscita.';
+        qs('forceMetaBase').textContent='Varia — Specifiche';
+        sendHeightSoon();
+        return;
+      }
+      if(directSpecific.value===null){
+        bodyDirect.className='hidden'; emptyDirect.className='force-result-empty';
+        emptyDirect.textContent='Le Specifiche non prevedono un valore di Fianto Duri per questa combinazione di PG, Sapienza e riuscita.';
+        qs('forceMetaBase').textContent='Varia — Specifiche';
+        sendHeightSoon();
+        return;
+      }
+      var aggDirect=kbAggregate();
+      var extDirect=Math.max(0,1+(Number(aggDirect.forcePct||0)/100));
+      var effectiveDirect=Math.round(directSpecific.value*extDirect);
+      qs('forceMetaBase').textContent=(directSpecific.value>=0?'+':'')+forceFmt(directSpecific.value,2)+' dalle Specifiche';
+      emptyDirect.className='force-result-empty hidden'; bodyDirect.className='';
+      qs('forceResultValue').textContent=String(effectiveDirect);
+      var directPieces=[];
+      directPieces.push('<strong>Specifiche:</strong> '+escapeHtml((directSpecific.value>=0?'+':'')+forceFmt(directSpecific.value,2))+' Forza');
+      directPieces.push('<strong>Potenza / Fatica:</strong> nessun ricalcolo ulteriore');
+      if(aggDirect.forcePct!==0)directPieces.push('<strong>Modificatori esterni di Forza:</strong> '+escapeHtml(kbSigned(aggDirect.forcePct))+'% → '+escapeHtml(forceFmt(effectiveDirect,0)));
+      qs('forceBreakdown').innerHTML=directPieces.join(' · ');
+      var dmgDirect=qs('forceDamageBox'); if(dmgDirect){dmgDirect.className='force-damage-box hidden';dmgDirect.innerHTML='';delete dmgDirect.dataset.copyText;}
+      sendHeightSoon();
+      return;
     }
 
-    var base=meta.baseForce!==null?meta.baseForce:forceNumInput('forceManualBase');
+    var variableSpecific=meta.baseForce===null?forceVariableSpecific(state.selectedEntry,pct):null;
+    if(meta.baseForce===null){
+      if(variableSpecific){
+        manualWrap.className='force-field hidden';
+        note.className='force-inline-note';
+        if(variableSpecific.successEmbedded){
+          note.innerHTML='<strong>Forza graduata dalle Specifiche.</strong> Per questa Conoscenza la tabella assegna già una Forza diversa a seconda della riuscita (100/66/33%). Il valore della fascia scelta viene quindi usato come riferimento e <strong>la riuscita non viene applicata una seconda volta</strong>. Parametro affine, Fatica, Sapienza e modificatori esterni continuano invece a influenzare la Forza finale.';
+        }else{
+          note.innerHTML='<strong>Forza base letta automaticamente dalle Specifiche.</strong> Il valore dipende dal tipo di PG e dalla presenza della Sapienza affine; la riuscita continua poi a modificare normalmente la Forza, insieme a Parametro, Fatica, Sapienza e altri modificatori.';
+          if(cleanKnowledgeName(state.selectedEntry&&state.selectedEntry.name||'').toLowerCase()==='repello inimicum'){
+            note.innerHTML+='<br><strong>Repello Inimicum:</strong> la Forza calcolata qui è quella dell’<strong>uso singolo</strong>. Se viene applicato a uno scudo già esistente, danno alla Salute e durata extra sono i valori fissi della relativa riga delle Specifiche e non vanno ricavati da questa Forza.';
+          }
+        }
+      }else{
+        manualWrap.className='force-field';
+        note.className='force-inline-note is-warning';
+        note.innerHTML='<strong>Forza variabile.</strong> Questa Conoscenza indica «'+escapeHtml(meta.forceRaw)+'». Leggi nelle Specifiche quale Forza base si applica al tuo caso e inseriscila nel campo dedicato; il resto del calcolo sarà automatico.';
+      }
+    }
+
+    var base=meta.baseForce!==null?meta.baseForce:(variableSpecific?variableSpecific.base:forceNumInput('forceManualBase'));
+    if(variableSpecific && variableSpecific.base!==null){
+      qs('forceMetaBase').textContent=forceFmt(variableSpecific.base,2)+' — Specifiche'+(variableSpecific.successEmbedded&&variableSpecific.sourcePct?(' · '+variableSpecific.sourcePct+'%'):'');
+    }else if(variableSpecific){
+      qs('forceMetaBase').textContent='Varia — Specifiche';
+    }
     var param=forceNumInput('forceParamValue');
     var fatMax=forceNumInput('forceFatigueMax');
     var fatCur=forceNumInput('forceFatigueCurrent');
@@ -4818,7 +5003,7 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
       return;
     }
 
-    var successFactor={0:0,33:.33,66:.66,100:1}[pct];
+    var successFactor=(variableSpecific&&variableSpecific.successEmbedded)?1:{0:0,33:.33,66:.66,100:1}[pct];
     var fatigueFactor=Math.max(fatCur/fatMax,.1);
     var sapFactor=.02*sap;
     var advFactor=forceAdvancedBonus(adv);
@@ -4835,7 +5020,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     pieces.push('<strong>Fatica:</strong> '+forceFmt(fatCur,2)+' / '+forceFmt(fatMax,2)+' → ×'+forceFmt(fatigueFactor,3));
     pieces.push('<strong>Sapienza:</strong> '+forceFmt(sap,0)+' → +'+forceFmt(sapFactor*100,0)+'%');
     if(state.tipologia==='avanzata'){ pieces.push('<strong>Conoscenza Avanzata Lv '+adv+':</strong> +'+forceFmt(advFactor*100,0)+'%'); }
-    pieces.push('<strong>Riuscita:</strong> ×'+forceFmt(successFactor,2));
+    if(variableSpecific&&variableSpecific.successEmbedded){
+      pieces.push('<strong>Riuscita:</strong> '+escapeHtml(String(pct))+'% già incorporata nella Forza '+escapeHtml(forceFmt(base,2))+' delle Specifiche');
+    }else{
+      pieces.push('<strong>Riuscita:</strong> ×'+forceFmt(successFactor,2));
+    }
     if(agg.forcePct!==0){ pieces.push('<strong>Altri modificatori di Forza:</strong> '+escapeHtml(kbSigned(agg.forcePct))+'%'); }
     qs('forceBreakdown').innerHTML=pieces.join(' · ');
 
@@ -4845,10 +5034,15 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var sourceText=String(state.selectedEntry&&state.selectedEntry.source||'').toLowerCase();
     var isDamagingSpell=hasHealth && combatSignForKnowledge('Salute')==='-' && sourceText.indexOf('incantesimo')!==-1;
     var baseNumerator=param*base*fatigueFactor*skillFactor*successFactor*externalForceFactor;
+    var fixedTargetEffect=forceFixedTargetEffect(state.selectedEntry);
     if(isMultiTargets){
       dmgBox.className='force-damage-box';
       dmgBox.innerHTML='';
-      forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell);
+      forceRenderMultiTargetResults(baseNumerator,maxTargets,targetInfo,isDamagingSpell,fixedTargetEffect);
+    }else if(fixedTargetEffect){
+      dmgBox.className='force-damage-box';
+      dmgBox.innerHTML='<div class="force-target-title">Effetto concreto sul bersaglio</div>'+fixedTargetEffect.html;
+      dmgBox.dataset.copyText=fixedTargetEffect.copy||'';
     }else if(resistance!==null && resistance>0){
       var rawEffect=Math.pow(Math.max(0,baseNumerator/resistance),.6);
       var health=Math.round(rawEffect);
