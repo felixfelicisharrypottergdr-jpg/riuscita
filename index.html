@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<!-- v148 — Audit consumabili e bonus affini: usi esauriti esclusi dai vincoli, Talismano/Pulsar unici, Nihil Malus attivo e Magi Biografia vincolata all’ambito, 04/09/2026 -->
+<!-- v149 — Audit dadi multipli: Avis genera un tiro Destrezza+Resistenza per ogni uccello; Pax/Imposium un 1d15 per ogni bersaglio; Legilimens un 1d10 per ogni ricordo su bersaglio non consenziente. Verificati i flussi multipli già dedicati (Ardor, Ardemonium, Dissimulo, Incarceramus, Remuvo/Sectis, Sfera di Cristallo, Divinazioni multiple), 05/09/2026 -->
 <html lang="it">
 <head>
 <meta charset="UTF-8">
@@ -1031,6 +1031,18 @@
 
 .material-context-activation{margin:8px 0 3px;padding:7px 9px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;background:rgba(0,0,0,.12);font-size:.84em}
 .material-context-activation input{flex:0 0 auto}
+
+  /* v149 — dadi ripetuti per entità/bersaglio: layout compatto ma leggibile. */
+  .repeat-dice-panel{margin-top:10px;padding:10px;border:1px solid rgba(122,90,48,.28);border-radius:10px;background:rgba(255,250,238,.52)}
+  .repeat-dice-head{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:8px}
+  .repeat-dice-title{font-weight:700}
+  .repeat-dice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));gap:8px;margin-top:8px}
+  .repeat-dice-card{padding:8px;border:1px solid rgba(122,90,48,.22);border-radius:8px;background:rgba(255,255,255,.42)}
+  .repeat-dice-card-title{font-weight:700;margin-bottom:5px}
+  .repeat-dice-card .rule-dice-line{margin:5px 0}
+  .repeat-dice-summary{font-size:.92em;opacity:.88}
+  .repeat-dice-count-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:7px}
+  .repeat-dice-count-row input{width:86px}
 </style>
 
 <style id="v28-collegamenti-inline">
@@ -4091,6 +4103,11 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if(name==='dolohoferio'&&(f==='1d15'||f==='1d7'))return false;
     /* v117 — Ardor: il 1d50 si ripete per ogni bersaglio/proiettile da schivare. */
     if(name==='ardor'&&f==='1d50')return false;
+    /* v149 — Pax e Legilimens hanno un numero variabile ma finito di tiri nello
+       stesso utilizzo. Il renderer generico mostrerebbe un solo dado: vengono
+       sostituiti dai flussi dedicati che mantengono un risultato per bersaglio/ricordo. */
+    if((name==='pax'||name==='imposium')&&f==='1d15')return false;
+    if(name==='legilimens'&&f==='1d10')return false;
     /* v117 — Sfera di Cristallo: il 1d32 va ripetuto per ogni indizio ottenuto. */
     if(name==='uso della sfera di cristallo'&&f==='1d32')return false;
     /* v118 — Adduco Maxima usa rami distinti (Bagaglio / posti); Moltiplico
@@ -4639,6 +4656,85 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var f=document.createElement('span');f.className='auto-roll-direct-note';f.innerHTML='<strong>Fatica:</strong> −3 per questo utilizzo.';box.appendChild(f);list.appendChild(box);
   }
 
+
+  /* v149 — helper comune per tiri ripetuti nello stesso utilizzo. A differenza dei
+     tiri "ogni post", qui il numero di eventi è già determinabile/sele­zionabile
+     nel momento in cui si usa la Conoscenza e ogni elemento deve conservare il
+     proprio esito indipendente. */
+  function repeatDiceBatchButton(label,rows){
+    var b=document.createElement('button');b.type='button';b.className='rule-dice-copy';b.textContent=label||'Copia tutti i dadi';
+    b.addEventListener('cli'+'ck',function(){var out=[];for(var i=0;i<rows.length;i++){out.push('<b>'+rows[i].label+'</b>');out.push(forumDiceFromFormula(rows[i].formula));}copyTextWithFeedback(out.join('\n'),b,'Copia i dadi qui sotto:');});
+    return b;
+  }
+  function appendCompactRepeatedDice(entry,parent,opt){
+    var rows=[],grid=document.createElement('div');grid.className='repeat-dice-grid';
+    var fakeBlock={heading:opt.heading||opt.title||'Tiri ripetuti',key:opt.key||selectedAudienceRuleKey(entry),label:opt.title||cleanKnowledgeName(entry&&entry.name)};
+    var fakeRow={pct:String(state.lastPct),value:opt.context||'',raw:opt.context||''};
+    for(var i=1;i<=opt.count;i++){
+      var card=document.createElement('div');card.className='repeat-dice-card';
+      var ct=document.createElement('div');ct.className='repeat-dice-card-title';ct.textContent=(opt.itemLabel||'Elemento')+' '+i;card.appendChild(ct);
+      var defs=typeof opt.diceForItem==='function'?opt.diceForItem(i):opt.dice;
+      for(var d=0;d<defs.length;d++){
+        var def=defs[d],txt=(opt.itemLabel||'Elemento')+' '+i+(def.label?' — '+def.label:'')+(def.condition?' — '+def.condition:'');
+        card.appendChild(makeRuleOutcomeDiceControl(entry,fakeBlock,fakeRow,{formula:def.formula,text:txt},(opt.keyBase||300)+((i-1)*20)+d));
+        rows.push({label:txt,formula:def.formula});
+      }
+      grid.appendChild(card);
+    }
+    parent.appendChild(grid);
+    if(rows.length){var head=parent.querySelector('.repeat-dice-head');if(head)head.appendChild(repeatDiceBatchButton('Copia tutti i dadi',rows));}
+  }
+
+  function paxRepeatedSpec(){
+    var p=Number(state.lastPct),pg=state.pg,sm=currentSapienzaMode(),max=0,thr=0;
+    if(!(p===100||p===66||p===33))return null;
+    if(pg==='studente'){max={100:3,66:2,33:1}[p]||0;thr={100:5,66:4,33:3}[p]||0;}
+    else if(pg==='adulto'&&sm==='senza'){max={100:6,66:5,33:4}[p]||0;thr={100:8,66:7,33:6}[p]||0;}
+    else if(pg==='adulto'&&sm==='con'){max={100:9,66:8,33:7}[p]||0;thr={100:12,66:11,33:10}[p]||0;}
+    return max&&thr?{max:max,threshold:thr}:null;
+  }
+  function appendPaxRepeatedControls(entry,list){
+    var knowledgeName=cleanKnowledgeName(entry&&entry.name).toLowerCase();
+    if(knowledgeName!=='pax'&&knowledgeName!=='imposium')return;
+    var isImposium=knowledgeName==='imposium',displayName=isImposium?'Imposium':'Pax',targetSingular=isImposium?'Creatura':'Pianta',targetPlural=isImposium?'Creature':'Piante';
+    var spec=paxRepeatedSpec(),box=document.createElement('div');box.className='auto-roll-special-context repeat-dice-panel';
+    var head=document.createElement('div');head.className='repeat-dice-head';var title=document.createElement('div');title.className='repeat-dice-title';title.textContent=displayName+' — un 1d15 per ogni '+targetSingular+' bersaglio';head.appendChild(title);box.appendChild(head);
+    if(!spec){var wait=document.createElement('span');wait.className='auto-roll-direct-note';wait.textContent='Completa PG, Sapienza affine e riuscita: il tool ricaverà il massimo di bersagli e la soglia corretta.';box.appendChild(wait);list.appendChild(box);return;}
+    var note=document.createElement('div');note.className='repeat-dice-summary';note.innerHTML='Con le scelte attuali puoi colpire fino a <strong>'+spec.max+' bersagli</strong>. Ogni '+targetSingular+' richiede un tiro distinto e viene placata con <strong>1–'+spec.threshold+' su 1d15</strong>.';box.appendChild(note);
+    var statePrefix=isImposium?'imposium':'pax',ck=flowStateKey(entry,statePrefix+'|targets'),sv=state.extraRollResults[ck],n=sv&&typeof sv==='object'?Number(sv.value):Number(sv),row=document.createElement('div');row.className='repeat-dice-count-row';
+    var lab=document.createElement('label');lab.textContent=targetPlural+' effettivamente bersaglio:';var inp=document.createElement('input');inp.type='number';inp.min='1';inp.max=String(spec.max);inp.step='1';inp.inputMode='numeric';if(Number.isInteger(n)&&n>=1)inp.value=String(Math.min(spec.max,n));lab.appendChild(inp);row.appendChild(lab);box.appendChild(row);
+    inp.addEventListener('keydown',function(e){if(e.key==='e'||e.key==='E'||e.key==='+'||e.key==='-')e.preventDefault();});
+    inp.addEventListener('change',function(){var v=Math.floor(Number(inp.value));if(v>=1&&v<=spec.max)state.extraRollResults[ck]={value:v};else delete state.extraRollResults[ck];renderAutoExtraRolls(entry);});
+    if(Number.isInteger(n)&&n>=1){n=Math.min(spec.max,n);appendCompactRepeatedDice(entry,box,{title:displayName,heading:displayName+' — bersagli',key:statePrefix+'-'+selectedAudienceRuleKey(entry),keyBase:isImposium?450:400,count:n,itemLabel:targetSingular,dice:[{label:'Tentativo di placarla',formula:'1d15',condition:'si placa con 1-'+spec.threshold+' su 1d15'}],context:displayName+': ogni bersaglio colpito richiede il proprio 1d15.'});}
+    list.appendChild(box);
+  }
+
+  function legilimensRepeatedSpec(){
+    var pg=state.pg,sm=currentSapienzaMode();
+    if(pg==='studente')return {max:1,threshold:4};
+    if(pg==='adulto'&&sm==='senza')return {max:2,threshold:6};
+    if(pg==='adulto'&&sm==='con')return {max:3,threshold:8};
+    return null;
+  }
+  function appendLegilimensRepeatedControls(entry,list){
+    if(cleanKnowledgeName(entry&&entry.name).toLowerCase()!=='legilimens'||Number(state.lastPct)<=0)return;
+    var box=document.createElement('div');box.className='auto-roll-special-context repeat-dice-panel';
+    var head=document.createElement('div');head.className='repeat-dice-head';var title=document.createElement('div');title.className='repeat-dice-title';title.textContent='Legilimens — ricerca dei ricordi';head.appendChild(title);box.appendChild(head);
+    var modeKey=flowStateKey(entry,'legilimens|consent'),sv=state.extraRollResults[modeKey],mode=String(sv&&typeof sv==='object'?sv.value:(sv||''));
+    var lab=document.createElement('label');lab.textContent='Il bersaglio è:';box.appendChild(lab);var sel=document.createElement('select');sel.innerHTML='<option value="">— Seleziona —</option><option value="yes">Consenziente</option><option value="no">Non consenziente</option>';sel.value=mode;box.appendChild(sel);
+    sel.addEventListener('change',function(){state.extraRollResults[modeKey]={value:sel.value};renderAutoExtraRolls(entry);});
+    if(mode==='yes'){var ok=document.createElement('span');ok.className='auto-roll-direct-note';ok.textContent='Bersaglio consenziente: è il bersaglio a guidare il Legilimante tra i ricordi; la fonte non richiede il 1d10 di ricerca.';box.appendChild(ok);list.appendChild(box);return;}
+    if(mode!=='no'){var w=document.createElement('span');w.className='auto-roll-direct-note';w.textContent='Il 1d10 di ricerca compare soltanto per un bersaglio non consenziente.';box.appendChild(w);list.appendChild(box);return;}
+    var spec=legilimensRepeatedSpec();if(!spec){var ww=document.createElement('span');ww.className='auto-roll-direct-note';ww.textContent='Completa PG e Sapienza Mentale per determinare quanti ricordi sono disponibili e la soglia del 1d10.';box.appendChild(ww);list.appendChild(box);return;}
+    var info=document.createElement('div');info.className='repeat-dice-summary';info.innerHTML='Questo lancio può mostrare fino a <strong>'+spec.max+' ricord'+(spec.max===1?'o':'i')+'</strong>. Per ogni ricordo a disposizione serve un <strong>1d10 distinto</strong>; il ricordo cercato viene trovato con <strong>1–'+spec.threshold+'</strong>.';box.appendChild(info);
+    var countKey=flowStateKey(entry,'legilimens|memories'),cs=state.extraRollResults[countKey],n=cs&&typeof cs==='object'?Number(cs.value):Number(cs),row=document.createElement('div');row.className='repeat-dice-count-row';
+    var cl=document.createElement('label');cl.textContent='Ricordi effettivamente a disposizione:';var inp=document.createElement('input');inp.type='number';inp.min='1';inp.max=String(spec.max);inp.step='1';inp.inputMode='numeric';if(Number.isInteger(n)&&n>=1)inp.value=String(Math.min(spec.max,n));cl.appendChild(inp);row.appendChild(cl);box.appendChild(row);
+    inp.addEventListener('keydown',function(e){if(e.key==='e'||e.key==='E'||e.key==='+'||e.key==='-')e.preventDefault();});
+    inp.addEventListener('change',function(){var v=Math.floor(Number(inp.value));if(v>=1&&v<=spec.max)state.extraRollResults[countKey]={value:v};else delete state.extraRollResults[countKey];renderAutoExtraRolls(entry);});
+    if(Number.isInteger(n)&&n>=1){n=Math.min(spec.max,n);appendCompactRepeatedDice(entry,box,{title:'Legilimens',heading:'Legilimens — ricordi',key:'legilimens-'+selectedAudienceRuleKey(entry),keyBase:500,count:n,itemLabel:'Ricordo',dice:[{label:'Ricerca',formula:'1d10',condition:'ricordo cercato con 1-'+spec.threshold+' su 1d10'}],context:'Legilimens su bersaglio non consenziente: un tiro per ogni ricordo a disposizione.'});}
+    list.appendChild(box);
+  }
+
  function appendKnowledgeSpecialControls(entry,list){
     appendThirdEyeControls(entry,list);
     appendMirrorDivinationControls(entry,list);
@@ -4649,6 +4745,8 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     appendMoltiplicoRiskControls(entry,list);
     appendSectumControl(entry,list);
     appendArdorControls(entry,list);
+    appendPaxRepeatedControls(entry,list);
+    appendLegilimensRepeatedControls(entry,list);
     appendDolohoferioControls(entry,list);
     appendArdemoniumControls(entry,list);
     appendExtractionControls(entry,list);
@@ -5429,6 +5527,26 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     return dline;
   }
 
+
+  function avisBirdOutcomeSpec(entry,row){
+    if(cleanKnowledgeName(entry&&entry.name).toLowerCase()!=='avis')return null;
+    var v=String(row&&row.value||''),m=v.match(/^\s*(\d+)\s+per\s+(\d+)\s+post[^;]*;\s*Destrezza\s+((?:\d+\+)?\d*d\d+(?:\+\d+)?)\s+e\s+Resistenza\s+((?:\d+\+)?\d*d\d+(?:\+\d+)?)/i);
+    if(!m)return null;return {count:Number(m[1]),posts:Number(m[2]),dex:normalizeDiceFormula(m[3]),res:normalizeDiceFormula(m[4])};
+  }
+  function makeAvisBirdOutcomeGrid(entry,block,row,spec){
+    var wrap=document.createElement('div');wrap.className='repeat-dice-panel avis-birds';
+    var head=document.createElement('div');head.className='repeat-dice-head';var t=document.createElement('div');t.className='repeat-dice-title';t.textContent='Parametri individuali degli uccelli';head.appendChild(t);wrap.appendChild(head);
+    var summary=document.createElement('div');summary.className='repeat-dice-summary';summary.innerHTML='<strong>'+spec.count+' uccell'+(spec.count===1?'o':'i')+'</strong> per <strong>'+spec.posts+' post</strong> · per ciascuno: Destrezza <strong>'+escapeHtml(spec.dex.toUpperCase())+'</strong> + Resistenza <strong>'+escapeHtml(spec.res.toUpperCase())+'</strong>.';wrap.appendChild(summary);
+    var rows=[],grid=document.createElement('div');grid.className='repeat-dice-grid';
+    for(var i=1;i<=spec.count;i++){
+      var card=document.createElement('div');card.className='repeat-dice-card';var ct=document.createElement('div');ct.className='repeat-dice-card-title';ct.textContent='Uccello '+i;card.appendChild(ct);
+      card.appendChild(makeRuleOutcomeDiceControl(entry,block,row,{formula:spec.dex,text:'Uccello '+i+' — Destrezza'},600+((i-1)*2)));
+      card.appendChild(makeRuleOutcomeDiceControl(entry,block,row,{formula:spec.res,text:'Uccello '+i+' — Resistenza'},601+((i-1)*2)));
+      rows.push({label:'Avis — Uccello '+i+' — Destrezza',formula:spec.dex});rows.push({label:'Avis — Uccello '+i+' — Resistenza',formula:spec.res});grid.appendChild(card);
+    }
+    wrap.appendChild(grid);head.appendChild(repeatDiceBatchButton('Copia tutti i dadi',rows));return wrap;
+  }
+
   function makeRuleOutcomeRow(entry,block,row){
     var line=document.createElement('div');
     var hasOutcome=state.lastPct!==null && typeof state.lastPct!=='undefined';
@@ -5441,7 +5559,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     var value=document.createElement('div'); value.className='rule-outcome-value';
     var desc=document.createElement('div'); desc.className='rule-outcome-description'; desc.textContent=row.value; value.appendChild(desc);
     var diceClauses=row.diceClauses&&row.diceClauses.length?row.diceClauses:(row.formula?[{formula:row.formula,text:row.value}]:[]);
-    for(var di=0;di<diceClauses.length;di++)value.appendChild(makeRuleOutcomeDiceControl(entry,block,row,diceClauses[di],di));
+    var avisSpec=avisBirdOutcomeSpec(entry,row);
+    if(avisSpec)value.appendChild(makeAvisBirdOutcomeGrid(entry,block,row,avisSpec));
+    else for(var di=0;di<diceClauses.length;di++)value.appendChild(makeRuleOutcomeDiceControl(entry,block,row,diceClauses[di],di));
     line.appendChild(value); return line;
   }
 
@@ -5528,6 +5648,9 @@ var CONOSCENZE_DB = [{"name":"Aberto ✔","tipologia":"autoconclusiva","source":
     if(specialEntryName==='adduco maxima'||specialEntryName==='ritrova la strada persa'||specialEntryName==='ritrovare gli oggetti smarriti'){blocks=[];}
     if(specialEntryName==='moltiplico'){blocks=blocks.filter(function(b){return !/rischi del moltiplico/i.test(String(b.heading||''));});}
     if(specialEntryName==='sectumsempra'){blocks=blocks.filter(function(b){return !/perdere il controllo del sectumsempra/i.test(String(b.heading||''));});}
+    /* v149 — il blocco di Pax con il singolo 1d15 viene sostituito dal flusso
+       per-bersaglio; restano visibili massimo bersagli e durata. */
+    if(specialEntryName==='pax'||specialEntryName==='imposium'){blocks=blocks.filter(function(b){return !/possibilit[aà] di placare/i.test(String(b.heading||''));});}
     if(specialKnowledgeKind(entry)==='tracciatura')rolls=[];
     if(state.lastPct===null || typeof state.lastPct==='undefined'){ wrap.className='card hidden'; sendHeightSoon(); return; }
     var hasGlobalDivinationControl=/^div-/.test(specialKnowledgeKind(entry));
